@@ -31,6 +31,11 @@ The bare filename is resolved in this folder. An explicit path works too:
 
 The seventh case deliberately names a missing file. It has no resource file because its purpose is to demonstrate the missing-file error.
 
+## Play a file deck
+
+Run `./run.ps1`, choose `[2] Load from a card file`, and enter `input.txt`. Then choose a shuffle (or `[3] No
+shuffle` to deal the file order exactly) and Draw 1 or Draw 3. An invalid file shows its error and asks again.
+
 ## Explain the logic
 
 Read file -> split tokens -> validate suit-rank format -> match enum values -> reject duplicate identities with HashSet -> require 52 unique cards -> create Deck.

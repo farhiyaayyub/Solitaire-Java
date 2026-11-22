@@ -1,180 +1,275 @@
 package solitaire.game;
 
-import java.util.Objects;
 import java.util.List;
+import java.util.Objects;
 
 import solitaire.enums.GameStatus;
-import solitaire.enums.ShuffleType;
 import solitaire.io.ConsoleInput;
 import solitaire.io.ConsoleRenderer;
 import solitaire.model.Deck;
 import solitaire.move.Move;
 import solitaire.move.MoveGenerator;
 import solitaire.shuffle.ShuffleConfiguration;
-import solitaire.solver.SolvableDealProvider;
+import solitaire.shuffle.ShuffleType;
 import solitaire.solver.SolitaireSolver;
-import solitaire.solver.VisibleSolver;
+import solitaire.solver.SolvableDealProvider;
 
 /**
- * Coordinates setup, solver replay, manual play, and simulation reports.
+ * Connects input, the game engine, the solver, and the display: it sets up each game, lets the solver play it,
+ * replays the moves through the engine, and reports the result.
+ *
+ * <p>Type: final class; the controller.
+ * OOP: ABSTRACTION (depends on the SolitaireSolver interface, not on VisibleSolver),
+ * ENCAPSULATION (private fields), COMPOSITION (uses renderer, input, and solver objects).
  *
  * @author Farhiya Ayyub
  */
 public final class GameController {
+    // Field and object: the ConsoleRenderer that prints everything.
     private final ConsoleRenderer renderer = new ConsoleRenderer();
+    // Field: the solver, typed as the interface so any solver implementation can be used.
+    private final SolitaireSolver solver;
+    // Field: reads what the player types.
     private final ConsoleInput consoleInput;
-    private final SolitaireSolver.Limits limits;
 
-    /** Stores execution limits and input without starting a game. */
-    /** Stores the solver limits and console input used by this controller. */
-    public GameController(SolitaireSolver.Limits limits, ConsoleInput consoleInput) {
-        this.limits = Objects.requireNonNull(limits);
+    /**
+     * Constructor: Uses the supplied solver (any {@link SolitaireSolver} implementation) and console input.
+     * Calls: Objects.requireNonNull()
+     */
+    public GameController(SolitaireSolver solver, ConsoleInput consoleInput) {
+        this.solver = Objects.requireNonNull(solver);
         this.consoleInput = Objects.requireNonNull(consoleInput);
     }
 
-    /** Creates a reproducible Draw 1 board from a random shuffle. */
-    /** Creates a reproducible random deal from the supplied seed. */
-    public static GameState random(long seed) {
-        Deck deck = new Deck();
-        deck.shuffle(seed);
-        return GameState.deal(deck);
-    }
-
-    /** Reads the two setup choices and starts play unless cancelled. */
+    /**
+     * Method: Runs the interactive menu until the player declines another game or cancels.
+     * Calls: ConsoleRenderer.heading(), playFromMenu(), ConsoleInput.playAgain(), ConsoleRenderer.goodbye()
+     */
     public void shuffleAndPlay() {
-        ConsoleRenderer.heading("KLONDIKE SOLITAIRE");
+        renderer.heading("KLONDIKE SOLITAIRE");
         do {
-            ShuffleConfiguration configuration = consoleInput.shuffleConfiguration();
-            if (configuration == null) return;
-            int drawCount = consoleInput.drawCount();
-            if (drawCount == 0) return;
-            String mode = consoleInput.playMode();
-            if (mode.equals("q")) return;
-            if (mode.equals("2")) {
-                int count = consoleInput.gameCount();
-                if (count == 0) return;
-                simulate(count, configuration, drawCount, false);
-                if (consoleInput.wantsToWatchSimulationGame()) watchSimulationGame(configuration, drawCount, 0);
-            } else {
-                automatic(configuration, drawCount, false);
+            if (!playFromMenu()) {
+                return;
             }
         } while (consoleInput.playAgain());
-        System.out.println("Thank you for playing!");
+        renderer.goodbye();
     }
 
-    /** Plays Draw 1; compact output omits intermediate boards. */
+    /**
+     * Method: Plays a Draw 1 game from a standard deck; compact output shows only the final board.
+     * Calls: automatic(ShuffleConfiguration, Deck, int, boolean)
+     */
     public void automatic(ShuffleConfiguration configuration, boolean compact) {
-        automatic(configuration, 1, compact);
+        // Object: Deck - a new standard deck.
+        automatic(configuration, new Deck(), GameState.DRAW_ONE, compact);
     }
 
-    /** Solves and legally replays the selected shuffle and draw mode. */
-    public void automatic(ShuffleConfiguration configuration, int drawCount, boolean compact) {
-        automatic(configuration, new Deck(), drawCount, compact);
-    }
-
-    /** Runs automatic play from a validated supplied deck. */
+    /**
+     * Method: Shuffles the deck, lets the solver play, and replays every move through the game engine.
+     * Calls: ConsoleRenderer.shuffleConfiguration(), ConsoleRenderer.playing(), ShuffleConfiguration.prepareDeck(),
+     * GameState.deal(), ConsoleRenderer.render(), solveAndReplay(), ConsoleRenderer.resultDetail()
+     */
     public void automatic(ShuffleConfiguration configuration, Deck initialDeck, int drawCount, boolean compact) {
         renderer.shuffleConfiguration(configuration);
-        System.out.println("Playing... (Draw " + drawCount + ")");
+        renderer.playing(drawCount);
+        // Object: SolitaireGame - the game engine for this deal.
         SolitaireGame game = new SolitaireGame(GameState.deal(configuration.prepareDeck(initialDeck), drawCount));
-        if (!compact) renderer.render(game);
-        SolitaireSolver solver = new VisibleSolver(limits);
-        SolitaireSolver.Result result = solver.solve(game.state());
-        replay(game, result.moves(), compact);
-        game.finish(result.status());
+        if (!compact) {
+            renderer.render(game);
+        }
+        SolitaireSolver.Result result = solveAndReplay(game, compact);
         renderer.render(game);
+        renderer.resultDetail(result.detail());
     }
-    /** Replays the constructed deal's verified winning sequence. */
+
+    /**
+     * Method: Replays the constructed practice deal's verified winning moves.
+     * Calls: SolvableDealProvider.create(), ConsoleRenderer.render(), replay(), SolitaireGame.finish(),
+     * ConsoleRenderer.resultDetail()
+     */
     public void guaranteed(boolean compact) {
+        // Object: SolvableDealProvider - builds a deal that is known to be winnable.
         SolvableDealProvider.VerifiedDeal deal = new SolvableDealProvider().create();
+        // Object: SolitaireGame - the game engine for the practice deal.
         SolitaireGame game = new SolitaireGame(deal.state());
-        if (!compact) renderer.render(game);
+        if (!compact) {
+            renderer.render(game);
+        }
         replay(game, deal.solution(), compact);
         game.finish(GameStatus.WON);
         renderer.render(game);
-        renderer.solverDetail("Practice deal with a verified solution.");
-    }
-    /** Applies a move path to the game and displays each step when requested. */
-    private void replay(SolitaireGame game, List<Move> moves, boolean compact) {
-        for (Move move : moves) {
-            if (!compact) renderer.nextMove(move);
-            if (!game.play(move)) throw new IllegalStateException("Invalid solution path");
-
-            if (!compact) renderer.render(game);
-        }
+        renderer.resultDetail("Practice deal with a verified solution.");
     }
 
-    /** Reports random-game results for consecutive seeds. */
+    /**
+     * Method: Reports Draw 1 random-shuffle results for consecutive seeds.
+     * Calls: simulateBatch()
+     */
     public void simulate(int gameCount, long firstSeed) {
-        simulate(gameCount, firstSeed, ShuffleType.RANDOM, 1);
+        simulateBatch(gameCount, firstSeed, ShuffleType.RANDOM);
     }
 
-    /** Compares shuffle methods over matching starting seeds. */
+    /**
+     * Method: Compares Random, In-Faro, and Out-Faro over the same starting seeds.
+     * Calls: simulateBatch() (once for each shuffle)
+     */
     public void compare(int gameCount, long firstSeed) {
-        simulate(gameCount, firstSeed, ShuffleType.RANDOM, 1);
-        simulate(gameCount, firstSeed, ShuffleType.IN, 1);
-        simulate(gameCount, firstSeed, ShuffleType.OUT, 1);
-
+        simulateBatch(gameCount, firstSeed, ShuffleType.RANDOM);
+        simulateBatch(gameCount, firstSeed, ShuffleType.IN);
+        simulateBatch(gameCount, firstSeed, ShuffleType.OUT);
     }
 
-    /** Runs a batch of games using the selected shuffle strategy. */
-    private void simulate(int gameCount, long firstSeed, ShuffleType type, int repetitions) {
-        simulate(gameCount, new ShuffleConfiguration(type, repetitions, type != ShuffleType.RANDOM, firstSeed), 1, true);
-    }
-
-    /** Runs games for consecutive seeds and reports their outcomes. */
-    private void simulate(int gameCount, ShuffleConfiguration configuration, int drawCount, boolean showEachGame) {
-        if (gameCount < 1) throw new IllegalArgumentException("Game count must be positive");
-        renderer.simulationStarted();
-        renderer.shuffleConfiguration(configuration);
-        System.out.println("Playing... (Draw " + drawCount + ")");
-        long started = System.nanoTime();
-        int won = 0, limitedGames = 0, stuckGames = 0;
-        long moves = 0, totalDecisions = 0;
-        for (int gameIndex = 0; gameIndex < gameCount; gameIndex++) {
-            SolitaireGame game = new SolitaireGame(GameState.deal(new ShuffleConfiguration(
-                    configuration.type(), configuration.repetitions(), configuration.randomizedInitial(),
-                    configuration.seed() + gameIndex).prepareDeck(), drawCount));
-            var result = new VisibleSolver(limits).solve(game.state());
-            replay(game, result.moves(), true);
-            game.finish(result.status());
-            if (game.status() == GameStatus.WON) won++;
-            else if (game.status() == GameStatus.SEARCH_LIMIT_REACHED) limitedGames++;
-            else stuckGames++;
-            moves += game.moves();
-            totalDecisions += result.explored();
-            if (showEachGame) renderer.simulationGame(gameIndex + 1, game.status(), game.moves());
-        }
-        renderer.simulationSummary(gameCount, won, limitedGames, stuckGames, moves, totalDecisions);
-        System.out.printf(java.util.Locale.ROOT, "  Elapsed: %.1f seconds%n", (System.nanoTime() - started) / 1_000_000_000.0);
-    }
-
-    /** Replays one deal from a completed simulation with every move and board visible. */
-    private void watchSimulationGame(ShuffleConfiguration configuration, int drawCount, int gameIndex) {
-        ShuffleConfiguration selectedDeal = new ShuffleConfiguration(configuration.type(), configuration.repetitions(),
-                configuration.randomizedInitial(), configuration.seed() + gameIndex);
-        renderer.heading("WATCHING SIMULATED GAME " + (gameIndex + 1));
-        renderer.shuffleConfiguration(selectedDeal);
-        System.out.println("Playing... (Draw " + drawCount + ")");
-        SolitaireGame game = new SolitaireGame(GameState.deal(selectedDeal.prepareDeck(), drawCount));
-        renderer.render(game);
-        SolitaireSolver.Result result = new VisibleSolver(limits).solve(game.state());
-        replay(game, result.moves(), false);
-        game.finish(result.status());
-        renderer.render(game);
-    }
-
-    /** Accepts legal move selections until victory or cancellation. */
+    /**
+     * Method: Lets the player choose moves on a seeded random deal until they win, get stuck, or cancel.
+     * Calls: ShuffleConfiguration.prepareDeck(), GameState.deal(), ConsoleRenderer.render(),
+     * MoveGenerator.generate(), ConsoleInput.selectMove(), SolitaireGame.play()
+     */
     public void manual(long seed) {
-        SolitaireGame game = new SolitaireGame(random(seed));
+        // Object: ShuffleConfiguration - random shuffle with the given seed.
+        Deck deck = new ShuffleConfiguration(ShuffleType.RANDOM, false, seed).prepareDeck();
+        // Object: SolitaireGame - the game engine for this deal.
+        SolitaireGame game = new SolitaireGame(GameState.deal(deck));
+        // Object: MoveGenerator - lists the legal moves for the player.
         MoveGenerator generator = new MoveGenerator();
         while (!game.state().won()) {
             renderer.render(game);
-            List<Move> moves = generator.generate(game.state());
-            Move selected = consoleInput.selectMove(moves, renderer);
-            if (selected == null) return;
-            if (!game.play(selected)) throw new IllegalStateException("Selected move is no longer legal");
+            Move selected = consoleInput.selectMove(generator.generate(game.state()), renderer);
+            if (selected == null) {
+                return;
+            }
+            if (!game.play(selected)) {
+                throw new IllegalStateException("Selected move is no longer legal");
+            }
         }
         renderer.render(game);
+    }
+
+    /**
+     * Method: Runs one round of the interactive menu; returns false if the player cancels.
+     * Calls: ConsoleInput.deckSource(), ConsoleInput.loadDeck(), ConsoleInput.shuffleConfiguration(),
+     * ConsoleInput.drawCount(), ConsoleInput.playMode(), ConsoleInput.gameCount(),
+     * ConsoleInput.wantsToWatchSimulationGame(), automatic(), simulate(), ConsoleRenderer.heading()
+     */
+    private boolean playFromMenu() {
+        String deckSource = consoleInput.deckSource();
+        if (deckSource.equals("q")) {
+            return false;
+        }
+        Deck fileDeck = null;
+        if (deckSource.equals("2")) {
+            fileDeck = consoleInput.loadDeck();
+            if (fileDeck == null) {
+                return false;
+            }
+        }
+        boolean deckFromFile = fileDeck != null;
+        ShuffleConfiguration configuration = consoleInput.shuffleConfiguration(deckFromFile);
+        if (configuration == null) {
+            return false;
+        }
+        int drawCount = consoleInput.drawCount();
+        if (drawCount == 0) {
+            return false;
+        }
+        if (deckFromFile) {
+            automatic(configuration, fileDeck, drawCount, false);
+            return true;
+        }
+        String mode = consoleInput.playMode();
+        if (mode.equals("q")) {
+            return false;
+        }
+        if (mode.equals("1")) {
+            automatic(configuration, new Deck(), drawCount, false);
+            return true;
+        }
+        int gameCount = consoleInput.gameCount();
+        if (gameCount == 0) {
+            return false;
+        }
+        simulate(gameCount, configuration, drawCount, false);
+        if (consoleInput.wantsToWatchSimulationGame()) {
+            renderer.heading("WATCHING SIMULATED GAME 1");
+            automatic(configuration, new Deck(), drawCount, false);
+        }
+        return true;
+    }
+
+    /**
+     * Method: Runs a Draw 1 batch for one shuffle type; Faro shuffles start from a randomized deck.
+     * Calls: ShuffleType.isFaro(), simulate(int, ShuffleConfiguration, int, boolean)
+     */
+    private void simulateBatch(int gameCount, long firstSeed, ShuffleType type) {
+        // Object: ShuffleConfiguration - the settings for this batch.
+        simulate(gameCount, new ShuffleConfiguration(type, type.isFaro(), firstSeed), GameState.DRAW_ONE, true);
+    }
+
+    /**
+     * Method: Plays games with consecutive seeds and reports their outcomes.
+     * Calls: ConsoleRenderer.simulationStarted(), ConsoleRenderer.shuffleConfiguration(), ConsoleRenderer.playing(),
+     * ShuffleConfiguration.withSeedOffset(), ShuffleConfiguration.prepareDeck(), GameState.deal(),
+     * solveAndReplay(), ConsoleRenderer.simulationGame(), ConsoleRenderer.simulationSummary(),
+     * ConsoleRenderer.elapsed()
+     */
+    private void simulate(int gameCount, ShuffleConfiguration configuration, int drawCount, boolean showEachGame) {
+        if (gameCount < 1) {
+            throw new IllegalArgumentException("Game count must be positive");
+        }
+        renderer.simulationStarted();
+        renderer.shuffleConfiguration(configuration);
+        renderer.playing(drawCount);
+        long started = System.nanoTime();
+        int won = 0;
+        int limitedGames = 0;
+        int stuckGames = 0;
+        long totalMoves = 0;
+        long totalDecisions = 0;
+        for (int gameIndex = 0; gameIndex < gameCount; gameIndex++) {
+            Deck deck = configuration.withSeedOffset(gameIndex).prepareDeck();
+            // Object: SolitaireGame - the game engine for one simulated deal.
+            SolitaireGame game = new SolitaireGame(GameState.deal(deck, drawCount));
+            SolitaireSolver.Result result = solveAndReplay(game, true);
+            switch (game.status()) {
+                case WON -> won++;
+                case LIMIT_REACHED -> limitedGames++;
+                default -> stuckGames++;
+            }
+            totalMoves += game.moves();
+            totalDecisions += result.decisions();
+            if (showEachGame) {
+                renderer.simulationGame(gameIndex + 1, game.status(), game.moves());
+            }
+        }
+        renderer.simulationSummary(gameCount, won, limitedGames, stuckGames, totalMoves, totalDecisions);
+        renderer.elapsed(System.nanoTime() - started);
+    }
+
+    /**
+     * Method: Lets the solver play from the game's board, replays its moves on the game, and records the result.
+     * Calls: SolitaireSolver.solve() (runs VisibleSolver), SolitaireGame.state(), replay(), SolitaireGame.finish()
+     */
+    private SolitaireSolver.Result solveAndReplay(SolitaireGame game, boolean compact) {
+        SolitaireSolver.Result result = solver.solve(game.state());
+        replay(game, result.moves(), compact);
+        game.finish(result.status());
+        return result;
+    }
+
+    /**
+     * Method: Applies each move through the game engine, showing every step unless compact.
+     * Calls: ConsoleRenderer.nextMove(), SolitaireGame.play(), ConsoleRenderer.render()
+     */
+    private void replay(SolitaireGame game, List<Move> moves, boolean compact) {
+        for (Move move : moves) {
+            if (!compact) {
+                renderer.nextMove(move);
+            }
+            if (!game.play(move)) {
+                throw new IllegalStateException("Invalid solution path");
+            }
+            if (!compact) {
+                renderer.render(game);
+            }
+        }
     }
 }

@@ -2,48 +2,39 @@ package solitaire.pile;
 
 import solitaire.model.Card;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-
 /**
- * Stores cards drawn from the stock.
+ * Face-up cards drawn from the stock. Only its top card can be played.
+ *
+ * <p>Type: final class, subclass of CardPile.
+ * OOP: INHERITANCE (extends CardPile), POLYMORPHISM (overrides accepts and copy).
  *
  * @author Farhiya Ayyub
  */
-public final class WastePile {
-    private final Deque<Card> cards = new ArrayDeque<>();
+public final class WastePile extends CardPile {
 
-    /** Returns the number of cards in this pile or deck. */
-    public int size() {
-        return cards.size();
+    /** Method (override): Players never place cards on the waste; cards arrive only by drawing from the stock. */
+    @Override
+    public boolean accepts(Card card) {
+        return false;
     }
 
-    /** Returns a detached top-card snapshot, or null when empty. */
-    public Card top() {
-        return cards.isEmpty() ? null : cards.peekFirst().copy();
-    }
-
-    /** Adds the supplied card to the top of this pile. */
-    public void push(Card card) {
-        card.reveal();
-        cards.addFirst(card);
-    }
-
-    /** Removes and returns the top card; callers must ensure the pile is not empty. */
-    public Card pop() {
-        return cards.removeFirst();
-    }
-
-    /** Returns an unmodifiable list of detached card snapshots. */
-    public List<Card> cards() {
-        return cards.stream().map(Card::copy).toList();
-    }
-
-    /** Returns a detached copy, including card visibility. */
+    /**
+     * Method (override): Returns a detached copy, including card visibility.
+     * Calls: copyCardsInto()
+     */
+    @Override
     public WastePile copy() {
-        WastePile pileCopy = new WastePile();
-        for (Card card : cards) pileCopy.cards.addLast(card.copy());
-        return pileCopy;
+        // Object: WastePile - a new empty waste that receives the copied cards.
+        return copyCardsInto(new WastePile());
+    }
+
+    /**
+     * Method: Receives a card drawn from the stock and turns it face up. Package-private: only classes in the
+     * pile package (StockPile) can call it.
+     * Calls: Card.reveal(), addToTop()
+     */
+    void receiveDrawn(Card card) {
+        card.reveal();
+        addToTop(card);
     }
 }

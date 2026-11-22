@@ -1,36 +1,61 @@
 package solitaire.solver;
 
-import solitaire.game.GameState;
+import java.util.List;
+import java.util.Objects;
+
 import solitaire.enums.GameStatus;
+import solitaire.game.GameState;
 import solitaire.move.Move;
 
-import java.util.List;
-
 /**
- * Contract for bounded automatic play and its result values.
+ * Contract for automatic play: given a starting board, produce a bounded, replayable list of moves.
+ *
+ * <p>Type: interface, implemented by VisibleSolver. GameController only knows this interface.
+ * OOP: ABSTRACTION (says what a solver does, not how), POLYMORPHISM (any implementation can be plugged in).
+ *
  * @author Farhiya Ayyub
  */
 public interface SolitaireSolver {
-    /** Solves from a copy of the supplied starting board. */
-    Result solve(GameState initial);
 
-    /** Limits the amount of work a solver may perform. */
-    record Limits(int states, int moves, long milliseconds) {
-        /** Rejects limits that would allow no work to begin. */
+    /** Abstract method: Plays from a copy of the supplied starting board; the board passed in is not changed. */
+    Result solve(GameState initialBoard);
+
+    /**
+     * Type: record inside the interface. Limits the work a solver may do for one game.
+     *
+     * @param maxDecisions maximum number of move decisions
+     * @param maxMoves     maximum number of moves played
+     * @param maxMillis    maximum running time in milliseconds
+     */
+    record Limits(int maxDecisions, int maxMoves, long maxMillis) {
+        /** Constructor (compact): Rejects limits that would not allow any work. */
         public Limits {
-            if (states < 1 || moves < 1 || milliseconds < 1)
+            if (maxDecisions < 1 || maxMoves < 1 || maxMillis < 1) {
                 throw new IllegalArgumentException("Solver limits must be positive");
+            }
         }
     }
 
-    /** Holds the outcome, moves played, and decision count from a solved. */
-    record Result(GameStatus status, List<Move> moves, int explored, String detail) {
-        /** Validates the result and stores an immutable move list. */
+    /**
+     * Type: record inside the interface. The outcome of one solve.
+     *
+     * @param status    WON, STUCK, or LIMIT_REACHED
+     * @param moves     the moves played, in order
+     * @param decisions the number of decisions made
+     * @param detail    a short explanation of the outcome
+     */
+    record Result(GameStatus status, List<Move> moves, int decisions, String detail) {
+        /**
+         * Constructor (compact): Validates the result and stores an unmodifiable copy of the moves.
+         * Calls: Objects.requireNonNull(), List.copyOf()
+         */
         public Result {
-            java.util.Objects.requireNonNull(status, "status");
-            java.util.Objects.requireNonNull(detail, "detail");
+            Objects.requireNonNull(status, "status");
+            Objects.requireNonNull(detail, "detail");
             moves = List.copyOf(moves);
-            if (explored < 0) throw new IllegalArgumentException("Explored states cannot be negative");
+            if (decisions < 0) {
+                throw new IllegalArgumentException("Decision count cannot be negative");
+            }
         }
     }
 }

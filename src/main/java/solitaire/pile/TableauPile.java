@@ -1,86 +1,157 @@
 package solitaire.pile;
 
-import solitaire.model.Card;
-import solitaire.enums.Rank;
-
-import java.util.ArrayList;
 import java.util.List;
 
+import solitaire.enums.Rank;
+import solitaire.model.Card;
+
 /**
- * Stores an ordered tableau column.
+ * One of the seven tableau columns. Cards are built down in alternating colors, and the newly exposed card is
+ * turned face up whenever cards leave the column.
+ *
+ * <p>Type: final class, subclass of CardPile.
+ * OOP: INHERITANCE (extends CardPile), POLYMORPHISM (overrides accepts, copy, and onTopRemoved).
  *
  * @author Farhiya Ayyub
  */
-public final class TableauPile {
-    private final ArrayList<Card> cards = new ArrayList<>();
+public final class TableauPile extends CardPile {
 
-    /** Returns the number of cards in this pile or deck. */
-    public int size() {
-        return cards.size();
+    /** Constructor: Creates an empty column. */
+    public TableauPile() {
     }
 
-    /** Returns a detached top-card snapshot, or null when empty. */
-    public Card top() {
-        return cards.isEmpty() ? null : cards.get(cards.size() - 1).copy();
+    /**
+     * Constructor: Creates a dealt column: every card face down except the top card.
+     * Calls: Card.conceal(), addToTop() (from CardPile), revealTop()
+     */
+    public TableauPile(List<Card> dealtCards) {
+        for (Card card : dealtCards) {
+            card.conceal();
+            addToTop(card);
+        }
+        revealTop();
     }
 
-    /** Returns an unmodifiable list of detached card snapshots. */
-    public List<Card> cards() {
-        return cards.stream().map(Card::copy).toList();
-    }
-
-    /** Deals cards into the initial layout without shuffling. */
-    public void deal(Card card) {
-        cards.add(card);
-    }
-
-    /** Reveals the top tableau card if this column is nonempty. */
-    public void revealTop() {
-        if (!cards.isEmpty()) cards.get(cards.size() - 1).reveal();
-    }
-
-    /** Reports whether the supplied face-up card satisfies this pile's placement rule. */
+    /**
+     * Method (override): Accepts a King on an empty column, or a card one rank lower and opposite in color.
+     * Calls: Card.isFaceUp(), isEmpty(), cardAt(), fitsBelow()
+     */
+    @Override
     public boolean accepts(Card card) {
-        if (card == null || !card.isFaceUp()) return false;
-        return top() == null ? card.rank() == Rank.KING : top().isFaceUp() && top().rank().getValue() == card.rank().getValue() + 1 && top().isRed() != card.isRed();
+        if (card == null || !card.isFaceUp()) {
+            return false;
+        }
+        if (isEmpty()) {
+            return card.rank() == Rank.KING;
+        }
+        Card topCard = cardAt(size() - 1);
+        return topCard.isFaceUp() && fitsBelow(topCard, card);
     }
 
-    /** Checks that the requested top suffix is face-up, descending, and alternating in color. */
-    public boolean validSequence(int count) {
-        if (count < 1 || count > size()) return false;
+    /**
+     * Method (override): Returns a detached copy, including card visibility.
+     * Calls: copyCardsInto()
+     */
+    @Override
+    public TableauPile copy() {
+        // Object: TableauPile - a new empty column that receives the copied cards.
+        return copyCardsInto(new TableauPile());
+    }
+
+    /**
+     * Method (override): Reveals the newly exposed card after cards are removed from this column.
+     * Calls: revealTop()
+     */
+    @Override
+    protected void onTopRemoved() {
+        revealTop();
+    }
+
+    /**
+     * Method: Checks that the top {@code count} cards are face up, descending, and alternating in color.
+     * Calls: size(), cardAt(), Card.isFaceUp(), fitsBelow()
+     */
+    public boolean isValidSequence(int count) {
+        if (count < 1 || count > size()) {
+            return false;
+        }
         for (int cardIndex = size() - count; cardIndex < size(); cardIndex++) {
-            Card card = cards.get(cardIndex);
-            if (!card.isFaceUp()) return false;
-            if (cardIndex + 1 < size()) {
-                Card nextCard = cards.get(cardIndex + 1);
-                if (card.rank().getValue() != nextCard.rank().getValue() + 1 || card.isRed() == nextCard.isRed()) return false;
+            Card card = cardAt(cardIndex);
+            if (!card.isFaceUp()) {
+                return false;
+            }
+            if (cardIndex + 1 < size() && !fitsBelow(card, cardAt(cardIndex + 1))) {
+                return false;
             }
         }
         return true;
     }
 
-    /** Removes a valid top suffix and reveals the newly exposed card. */
+    /**
+     * Method: Returns a detached copy of the first (deepest) card of the top {@code count} cards.
+     * Calls: cardAt(), Card.copy()
+     */
+    public Card sequenceStart(int count) {
+        if (count < 1 || count > size()) {
+            throw new IllegalArgumentException("No sequence of " + count + " cards");
+        }
+        return cardAt(size() - count).copy();
+    }
+
+    /**
+     * Method: Removes a valid top sequence; the newly exposed card is revealed automatically.
+     * Calls: isValidSequence(), removeTopCards()
+     */
     public List<Card> removeSequence(int count) {
-        if (!validSequence(count)) throw new IllegalArgumentException("Invalid sequence");
-        List<Card> removedCards = new ArrayList<>(cards.subList(size() - count, size()));
-        cards.subList(size() - count, size()).clear();
-        revealTop();
-        return removedCards;
+        if (!isValidSequence(count)) {
+            throw new IllegalArgumentException("Invalid sequence of " + count + " cards");
+        }
+        return removeTopCards(count);
     }
 
-    /** Appends a valid descending sequence when its first card fits this column. */
+    /**
+     * Method: Appends a valid descending sequence whose first card fits this column.
+     * Calls: accepts(), isOrderedSequence(), addToTop()
+     */
     public void addSequence(List<Card> sequence) {
-        TableauPile sequenceCheck = new TableauPile();
-        sequence.forEach(sequenceCheck::deal);
-        if (!sequenceCheck.validSequence(sequence.size()) || !accepts(sequence.get(0)))
-            throw new IllegalArgumentException("Invalid placement");
-        cards.addAll(sequence);
+        if (sequence.isEmpty() || !accepts(sequence.get(0)) || !isOrderedSequence(sequence)) {
+            throw new IllegalArgumentException("Invalid tableau placement");
+        }
+        sequence.forEach(this::addToTop);
     }
 
-    /** Returns a detached copy, including card visibility. */
-    public TableauPile copy() {
-        TableauPile pileCopy = new TableauPile();
-        for (Card card : cards) pileCopy.deal(card.copy());
-        return pileCopy;
+    /**
+     * Method: Reports whether {@code lower} can sit directly on {@code upper}: one rank lower and opposite color.
+     * Calls: Card.rank(), Rank.value(), Card.isRed()
+     */
+    private static boolean fitsBelow(Card upper, Card lower) {
+        return upper.rank().value() == lower.rank().value() + 1 && upper.isRed() != lower.isRed();
+    }
+
+    /**
+     * Method: Reports whether a moving sequence is face up and built down in alternating colors.
+     * Calls: Card.isFaceUp(), fitsBelow()
+     */
+    private static boolean isOrderedSequence(List<Card> sequence) {
+        for (int cardIndex = 0; cardIndex < sequence.size(); cardIndex++) {
+            Card card = sequence.get(cardIndex);
+            if (!card.isFaceUp()) {
+                return false;
+            }
+            if (cardIndex + 1 < sequence.size() && !fitsBelow(card, sequence.get(cardIndex + 1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Method: Turns the top card face up if the column is not empty.
+     * Calls: isEmpty(), cardAt(), Card.reveal()
+     */
+    private void revealTop() {
+        if (!isEmpty()) {
+            cardAt(size() - 1).reveal();
+        }
     }
 }

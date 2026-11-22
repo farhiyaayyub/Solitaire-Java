@@ -1,61 +1,46 @@
 package solitaire.pile;
 
-import solitaire.model.Card;
+import java.util.Objects;
 
 import solitaire.enums.Suit;
-
-import java.util.ArrayList;
-import java.util.List;
+import solitaire.model.Card;
 
 /**
- * Stores one suit foundation.
+ * One foundation pile, built up from Ace to King in a single suit.
+ *
+ * <p>Type: final class, subclass of CardPile.
+ * OOP: INHERITANCE (extends CardPile), POLYMORPHISM (overrides accepts and copy), ENCAPSULATION (private suit).
  *
  * @author Farhiya Ayyub
  */
-public final class FoundationPile {
+public final class FoundationPile extends CardPile {
+    // Field: the suit this foundation collects; set once in the constructor.
     private final Suit suit;
-    private final ArrayList<Card> cards = new ArrayList<>();
 
-    /** Creates an empty foundation for the supplied suit. */
+    /**
+     * Constructor: Creates an empty foundation for the supplied suit.
+     * Calls: Objects.requireNonNull()
+     */
     public FoundationPile(Suit suit) {
-        this.suit = suit;
+        this.suit = Objects.requireNonNull(suit);
     }
 
-    /** Returns the number of cards in this pile or deck. */
-    public int size() {
-        return cards.size();
-    }
-
-    /** Returns a detached top-card snapshot, or null when empty. */
-    public Card top() {
-        return cards.isEmpty() ? null : cards.get(cards.size() - 1).copy();
-    }
-
-    /** Reports whether the supplied face-up card satisfies this pile's placement rule. */
+    /**
+     * Method (override): Accepts a face-up card of this suit exactly one rank higher than the current top.
+     * Calls: Card.isFaceUp(), Card.suit(), Card.rank(), Rank.value(), size()
+     */
+    @Override
     public boolean accepts(Card card) {
-        return card != null && card.isFaceUp() && card.suit() == suit && card.rank().getValue() == size() + 1;
+        return card != null && card.isFaceUp() && card.suit() == suit && card.rank().value() == size() + 1;
     }
 
-    /** Adds the supplied card to the top of this pile. */
-    public void push(Card card) {
-        if (!accepts(card)) throw new IllegalArgumentException("Invalid foundation placement");
-        cards.add(card);
-    }
-
-    /** Removes and returns the top card; callers must ensure the pile is not empty. */
-    public Card pop() {
-        return cards.remove(cards.size() - 1);
-    }
-
-    /** Returns an unmodifiable list of detached card snapshots. */
-    public List<Card> cards() {
-        return cards.stream().map(Card::copy).toList();
-    }
-
-    /** Returns a detached copy, including card visibility. */
+    /**
+     * Method (override): Returns a detached copy, including card visibility.
+     * Calls: copyCardsInto()
+     */
+    @Override
     public FoundationPile copy() {
-        FoundationPile pileCopy = new FoundationPile(suit);
-        for (Card card : cards) pileCopy.cards.add(card.copy());
-        return pileCopy;
+        // Object: FoundationPile - a new empty foundation of the same suit that receives the copied cards.
+        return copyCardsInto(new FoundationPile(suit));
     }
 }

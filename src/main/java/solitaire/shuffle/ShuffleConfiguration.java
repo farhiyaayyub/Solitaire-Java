@@ -1,54 +1,63 @@
 package solitaire.shuffle;
 
-import solitaire.enums.ShuffleType;
-
-import solitaire.model.Deck;
-
+import java.util.List;
 import java.util.Objects;
 
+import solitaire.model.Card;
+import solitaire.model.Deck;
+
 /**
- * Stores and applies deck shuffle settings.
+ * The player's shuffle settings. Creating a configuration only validates it; {@link #prepareDeck(Deck)} does the work.
  *
+ * <p>Type: record (an immutable data class; Java creates its fields, constructor, and the getters type(),
+ * randomizedInitial(), and seed()).
+ * OOP: ENCAPSULATION (fields cannot change after creation), POLYMORPHISM (uses any ShuffleStrategy).
+ *
+ * @param type              the selected shuffle
+ * @param randomizedInitial whether a seeded random shuffle is applied first (Faro shuffles only)
+ * @param seed              seed for every random step, so the same settings reproduce the same deal
  * @author Farhiya Ayyub
  */
-public record ShuffleConfiguration(ShuffleType type, int repetitions,
-                                   boolean randomizedInitial, long seed) {
-    public static final int MAX_OPERATIONS = 1000;
+public record ShuffleConfiguration(ShuffleType type, boolean randomizedInitial, long seed) {
 
-    /** Rejects missing shuffle types and invalid repetition settings. */
+    /**
+     * Constructor (compact): Rejects a missing type and a randomized start for shuffles other than Faro.
+     * Calls: Objects.requireNonNull(), ShuffleType.isFaro()
+     */
     public ShuffleConfiguration {
-        Objects.requireNonNull(type);
-        if (repetitions < 1 || repetitions > MAX_OPERATIONS)
-            throw new IllegalArgumentException("Shuffle count must be 1 to " + MAX_OPERATIONS);
-        if (type == ShuffleType.RANDOM && (repetitions != 1 || randomizedInitial))
-            throw new IllegalArgumentException("Random mode applies one seeded shuffle to the ordered deck");
+        Objects.requireNonNull(type, "type");
+        if (randomizedInitial && !type.isFaro()) {
+            throw new IllegalArgumentException("Only Faro shuffles start from a randomized deck");
+        }
     }
 
-    /** Creates and verifies a shuffled deck using this configuration. */
+    /** Method: Returns the same settings with the seed moved forward, used for consecutive simulation games. */
+    public ShuffleConfiguration withSeedOffset(long offset) {
+        // Object: ShuffleConfiguration - a new record, because records cannot be changed.
+        return new ShuffleConfiguration(type, randomizedInitial, seed + offset);
+    }
+
+    /**
+     * Method: Shuffles a new standard deck using these settings.
+     * Calls: prepareDeck(Deck)
+     */
     public Deck prepareDeck() {
+        // Object: Deck - a new standard 52-card deck.
         return prepareDeck(new Deck());
     }
 
-    /** Shuffles a copy of the supplied full deck, preserving its file order as the starting order. */
+    /**
+     * Method: Shuffles a copy of the supplied deck; the original deck is not changed.
+     * Calls: Deck.drawOrder(), ShuffleType.strategy(), ShuffleStrategy.shuffle(), Deck.verify()
+     */
     public Deck prepareDeck(Deck initialDeck) {
-        Deck deck = new Deck(initialDeck.drawOrder());
-        if (randomizedInitial) deck.shuffle(seed);
-        for (int shuffleIndex = 0; shuffleIndex < repetitions; shuffleIndex++) {
-            deck.shuffle(type, seed);
+        List<Card> drawOrder = initialDeck.drawOrder();
+        if (randomizedInitial) {
+            drawOrder = ShuffleType.RANDOM.strategy().shuffle(drawOrder, seed);
         }
+        // Object: Deck - built from the shuffled cards. shuffle() runs the chosen strategy's own version.
+        Deck deck = new Deck(type.strategy().shuffle(drawOrder, seed));
         deck.verify();
         return deck;
-    }
-
-    /** Returns a readable description of the shuffle configuration. */
-    public String description() {
-        String operation = switch (type) {
-            case IN -> "In-Faro x " + repetitions;
-            case OUT -> "Out-Faro x " + repetitions;
-
-            case RANDOM -> "Random shuffle";
-        };
-        return operation + " | Initial: " + (randomizedInitial ? "randomized" : "ordered")
-                + ((randomizedInitial || type == ShuffleType.RANDOM) ? " | Seed: " + seed : "");
     }
 }

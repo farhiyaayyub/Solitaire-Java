@@ -1,139 +1,201 @@
 package solitaire.game;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
+import solitaire.enums.Suit;
 import solitaire.model.Card;
 import solitaire.model.Deck;
-import solitaire.enums.Suit;
+import solitaire.move.Move;
+import solitaire.pile.CardPile;
 import solitaire.pile.FoundationPile;
 import solitaire.pile.StockPile;
 import solitaire.pile.TableauPile;
 import solitaire.pile.WastePile;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * Mutable working board; SolitaireGame copies it at ownership boundaries.
+ * The working board: stock, waste, seven tableau columns, and four foundations. It is mutable so the engine and
+ * solver can play on it; {@link SolitaireGame} protects its own board by handing out copies only.
+ *
+ * <p>Type: final class; the board is made of pile objects (composition: a GameState "has" piles).
+ * OOP: ENCAPSULATION (private constructor; boards are created only through deal() and copy()),
+ * POLYMORPHISM (sourcePile and destinationPile return any kind of pile as a CardPile).
+ *
  * @author Farhiya Ayyub
  */
 public final class GameState {
+    /** Constant: Number of tableau columns. */
     public static final int TABLEAU_COLUMNS = 7;
+    /** Constant: Draw mode that turns one card per draw. */
     public static final int DRAW_ONE = 1;
+    /** Constant: Draw mode that turns three cards per draw. */
     public static final int DRAW_THREE = 3;
+
+    // Fields: the draw mode and every pile on the board.
     private final int drawCount;
-    private StockPile stock = new StockPile();
-    private WastePile waste = new WastePile();
-    private final List<TableauPile> tableau = new ArrayList<>();
-    private final EnumMap<Suit, FoundationPile> foundations = new EnumMap<>(Suit.class);
+    private final StockPile stock;
+    private final WastePile waste;
+    private final List<TableauPile> tableau;
+    private final Map<Suit, FoundationPile> foundations;
 
-    /** Creates an empty Draw 1 board. */
-    public GameState() {
-        this(DRAW_ONE);
-    }
-
-    /** Creates an empty board that draws one or three cards at a time. */
-    public GameState(int drawCount) {
-        if (drawCount != DRAW_ONE && drawCount != DRAW_THREE) throw new IllegalArgumentException("Draw must be 1 or 3");
+    /** Constructor (private): Builds a board from already-created piles; only deal() and copy() use it. */
+    private GameState(int drawCount, StockPile stock, WastePile waste, List<TableauPile> tableau,
+                      Map<Suit, FoundationPile> foundations) {
+        if (drawCount != DRAW_ONE && drawCount != DRAW_THREE) {
+            throw new IllegalArgumentException("Draw must be 1 or 3");
+        }
         this.drawCount = drawCount;
-        for (int columnIndex = 0; columnIndex < TABLEAU_COLUMNS; columnIndex++) tableau.add(new TableauPile());
-        for (Suit suit : Suit.values()) foundations.put(suit, new FoundationPile(suit));
+        this.stock = stock;
+        this.waste = waste;
+        this.tableau = tableau;
+        this.foundations = foundations;
     }
 
-    /** Deals cards into the initial layout without shuffling. */
+    /**
+     * Method (static): Deals a Draw 1 board without shuffling.
+     * Calls: deal(Deck, int)
+     */
     public static GameState deal(Deck deck) {
         return deal(deck, DRAW_ONE);
     }
 
-    /** Deals cards into the initial layout without shuffling. */
+    /**
+     * Method (static): Deals the deck without shuffling: columns of 1 to 7 cards left to right with only each top
+     * card face up, then the remaining 24 cards into the stock. Waste and foundations start empty.
+     * Calls: Deck.draw(), Deck.size(), verify()
+     */
     public static GameState deal(Deck deck, int drawCount) {
-        GameState state = new GameState(drawCount);
+        List<TableauPile> tableau = new ArrayList<>();
         for (int columnIndex = 0; columnIndex < TABLEAU_COLUMNS; columnIndex++) {
+            List<Card> columnCards = new ArrayList<>();
             for (int cardIndex = 0; cardIndex <= columnIndex; cardIndex++) {
-                Card card = deck.draw();
-                card.conceal();
-                state.tableau.get(columnIndex).deal(card);
+                columnCards.add(deck.draw());
             }
-            state.tableau.get(columnIndex).revealTop();
+            // Object: TableauPile - one per column.
+            tableau.add(new TableauPile(columnCards));
         }
-        while (deck.size() > 0) state.stock.addBottom(deck.draw());
+        List<Card> stockCards = new ArrayList<>();
+        while (deck.size() > 0) {
+            stockCards.add(deck.draw());
+        }
+        Map<Suit, FoundationPile> foundations = new EnumMap<>(Suit.class);
+        for (Suit suit : Suit.values()) {
+            // Object: FoundationPile - one per suit.
+            foundations.put(suit, new FoundationPile(suit));
+        }
+        // Objects: StockPile, WastePile, and the GameState itself.
+        GameState state = new GameState(drawCount, new StockPile(stockCards), new WastePile(), tableau, foundations);
         state.verify();
         return state;
     }
 
-    /** Returns this working board's mutable stock pile. */
-    public StockPile stock() {
-        return stock;
-    }
-
-    /** Returns the selected draw count; console input uses zero to signal cancellation. */
+    /** Method: Returns the number of cards turned per draw (1 or 3). */
     public int drawCount() {
         return drawCount;
     }
 
-    /** Returns this working board's mutable waste pile. */
+    /** Method: Returns this board's stock pile. */
+    public StockPile stock() {
+        return stock;
+    }
+
+    /** Method: Returns this board's waste pile. */
     public WastePile waste() {
         return waste;
     }
 
-    /** Returns an unmodifiable list of mutable tableau piles belonging to this working board. */
+    /**
+     * Method: Returns an unmodifiable list of this board's tableau columns.
+     * Calls: Collections.unmodifiableList()
+     */
     public List<TableauPile> tableau() {
         return Collections.unmodifiableList(tableau);
     }
 
-    /** Returns this working board's mutable foundation for the requested suit. */
+    /** Method: Returns this board's foundation for the requested suit. */
     public FoundationPile foundation(Suit suit) {
         return foundations.get(suit);
     }
 
-    /** Returns the total number of cards placed in foundations. */
+    /**
+     * Method: Returns the pile a move takes cards from, as a general CardPile.
+     * Calls: foundation()
+     */
+    public CardPile sourcePile(Move move) {
+        return switch (move.type()) {
+            case DRAW -> stock;
+            case RECYCLE, WASTE_TO_TABLEAU, WASTE_TO_FOUNDATION -> waste;
+            case TABLEAU_TO_TABLEAU, TABLEAU_TO_FOUNDATION -> tableau.get(move.source());
+            case FOUNDATION_TO_TABLEAU -> foundation(Suit.values()[move.source()]);
+        };
+    }
+
+    /**
+     * Method: Returns the pile a move puts cards on, as a general CardPile.
+     * Calls: foundation()
+     */
+    public CardPile destinationPile(Move move) {
+        return switch (move.type()) {
+            case DRAW -> waste;
+            case RECYCLE -> stock;
+            case TABLEAU_TO_TABLEAU, WASTE_TO_TABLEAU, FOUNDATION_TO_TABLEAU -> tableau.get(move.destination());
+            case TABLEAU_TO_FOUNDATION, WASTE_TO_FOUNDATION -> foundation(Suit.values()[move.destination()]);
+        };
+    }
+
+    /**
+     * Method: Returns the total number of cards in the foundations.
+     * Calls: CardPile.size()
+     */
     public int foundationCount() {
-        return foundations.values().stream().mapToInt(FoundationPile::size).sum();
+        return foundations.values().stream().mapToInt(CardPile::size).sum();
     }
 
-    /** Reports victory only when all cards are in foundations and every other pile is empty. */
+    /**
+     * Method: Reports a win only when all 52 cards are in the foundations and every other pile is empty.
+     * Calls: foundationCount(), CardPile.isEmpty()
+     */
     public boolean won() {
-        return foundationCount() == Deck.CARD_COUNT && stock.size() == 0 && waste.size() == 0 && tableau.stream().allMatch(pile -> pile.size() == 0);
+        return foundationCount() == Deck.CARD_COUNT && stock.isEmpty() && waste.isEmpty()
+                && tableau.stream().allMatch(CardPile::isEmpty);
     }
 
-    /** Returns a detached copy, including card visibility. */
+    /**
+     * Method: Returns a detached copy of the whole board, including card visibility.
+     * Calls: TableauPile.copy(), FoundationPile.copy(), StockPile.copy(), WastePile.copy()
+     */
     public GameState copy() {
-        GameState stateCopy = new GameState(drawCount);
-        stateCopy.stock = stock.copy();
-        stateCopy.waste = waste.copy();
-        stateCopy.tableau.clear();
-        for (TableauPile pile : tableau) stateCopy.tableau.add(pile.copy());
-        for (Suit suit : Suit.values()) stateCopy.foundations.put(suit, foundation(suit).copy());
-        return stateCopy;
-    }
-
-    /** Adds a pile's card identities and visibility to a board key. */
-    private void append(StringBuilder keyBuilder, List<Card> cards) {
-        for (Card card : cards) {
-            keyBuilder.append(card.id()).append(card.isFaceUp() ? '+' : '-').append(',');
+        List<TableauPile> tableauCopy = new ArrayList<>();
+        for (TableauPile pile : tableau) {
+            tableauCopy.add(pile.copy());
         }
-        keyBuilder.append(' ');
+        Map<Suit, FoundationPile> foundationsCopy = new EnumMap<>(Suit.class);
+        for (Suit suit : Suit.values()) {
+            foundationsCopy.put(suit, foundation(suit).copy());
+        }
+        // Object: GameState - a new board built from copies of every pile.
+        return new GameState(drawCount, stock.copy(), waste.copy(), tableauCopy, foundationsCopy);
     }
 
-    /** Encodes draw mode, card order, and visibility for snapshot comparisons. */
-    public String key() {
-        StringBuilder keyBuilder = new StringBuilder();
-        keyBuilder.append(drawCount).append(':');
-        append(keyBuilder, stock.cards());
-        append(keyBuilder, waste.cards());
-        for (TableauPile pile : tableau) append(keyBuilder, pile.cards());
-        for (Suit suit : Suit.values()) append(keyBuilder, foundation(suit).cards());
-        return keyBuilder.toString();
-    }
-
-    /** Throws IllegalStateException unless exactly 52 distinct card identities are present. */
+    /**
+     * Method: Throws IllegalStateException unless the board holds exactly 52 distinct cards.
+     * Calls: CardPile.cards()
+     */
     public void verify() {
         List<Card> allCards = new ArrayList<>(stock.cards());
         allCards.addAll(waste.cards());
-        for (TableauPile pile : tableau) allCards.addAll(pile.cards());
-        for (Suit suit : Suit.values()) allCards.addAll(foundation(suit).cards());
-        if (allCards.size() != Deck.CARD_COUNT || new java.util.HashSet<>(allCards).size() != Deck.CARD_COUNT)
+        for (TableauPile pile : tableau) {
+            allCards.addAll(pile.cards());
+        }
+        for (FoundationPile pile : foundations.values()) {
+            allCards.addAll(pile.cards());
+        }
+        if (allCards.size() != Deck.CARD_COUNT || new HashSet<>(allCards).size() != Deck.CARD_COUNT) {
             throw new IllegalStateException("Card conservation violated");
+        }
     }
 }

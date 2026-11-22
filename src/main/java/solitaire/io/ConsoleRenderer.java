@@ -1,124 +1,206 @@
 package solitaire.io;
 
-import solitaire.game.GameState;
+import java.util.List;
+import java.util.Locale;
+
 import solitaire.enums.GameStatus;
-import solitaire.game.SolitaireGame;
 import solitaire.enums.Suit;
+import solitaire.game.GameState;
+import solitaire.game.SolitaireGame;
+import solitaire.model.Card;
 import solitaire.move.Move;
+import solitaire.pile.CardPile;
+import solitaire.shuffle.ShuffleConfiguration;
 
 /**
- * Displays the game board and play reports.
+ * Prints the board, moves, and reports to the console. It only displays; it never changes a game.
+ *
+ * <p>Type: final class; all screen output goes through this class (display is kept separate from game logic).
+ * OOP: ABSTRACTION (other classes just call render(game) without knowing the layout),
+ * POLYMORPHISM (topOrEmpty works with any CardPile).
  *
  * @author Farhiya Ayyub
  */
 public final class ConsoleRenderer {
+    // Constant: how an empty pile is shown.
+    private static final String EMPTY_SLOT = "[     ]";
 
-    /** Prints a compact opening title. */
-    public static void heading(String title) {
+    /** Method: Prints a plain title. */
+    public void heading(String title) {
         System.out.println("\n" + title);
     }
 
-    /** Prints a section title with minimal foreground color. */
-    public static void section(String title) {
-        System.out.println("\n  " + solitaire.enums.ConsoleColor.CYAN.paint(title));
+    /**
+     * Method: Prints a colored section title.
+     * Calls: ConsoleColor.paint()
+     */
+    public void section(String title) {
+        System.out.println("\n  " + ConsoleColor.CYAN.paint(title));
     }
-    /** Prints a board snapshot, draw mode, and game summary. */
+
+    /**
+     * Method: Prints the stock, waste, foundations, tableau, move count, and status.
+     * Calls: SolitaireGame.state(), section(), topOrEmpty(), renderTableau(), SolitaireGame.moves(),
+     * SolitaireGame.status(), statusText()
+     */
     public void render(SolitaireGame game) {
         GameState board = game.state();
-        ConsoleRenderer.section("STOCK & WASTE");
+        section("STOCK & WASTE");
         System.out.println("  Draw " + board.drawCount());
         System.out.printf("  Stock: %s  (%d cards)    Waste: %s  (%d cards)%n",
-                board.stock().size() == 0 ? "[     ]" : "[XX]", board.stock().size(),
-                board.waste().top() == null ? "[     ]" : board.waste().top(), board.waste().size());
-        ConsoleRenderer.section("FOUNDATIONS (Ace to King)");
+                board.stock().isEmpty() ? EMPTY_SLOT : "[XX]", board.stock().size(),
+                topOrEmpty(board.waste()), board.waste().size());
+        section("FOUNDATIONS (Ace to King)");
         System.out.print("  ");
-        for (Suit suit : Suit.values()) System.out.printf("%-17s", suit.symbol() + " " + suit.name());
-        System.out.print("\n  ");
-        for (Suit suit : Suit.values())
-            System.out.printf("%-17s", board.foundation(suit).top() == null ? "[     ]" : board.foundation(suit).top());
-        System.out.println();
-        ConsoleRenderer.section("TABLEAU");
-        System.out.print("  ");
-        for (int column = 1; column <= GameState.TABLEAU_COLUMNS; column++) System.out.printf("%-9s", "T" + column);
-        System.out.println();
-        int rows = board.tableau().stream().mapToInt(pile -> pile.size()).max().orElse(0);
-        for (int row = 0; row < Math.max(1, rows); row++) {
-            System.out.print("  ");
-            for (var pile : board.tableau())
-                System.out.printf("%-9s", row < pile.size() ? pile.cards().get(row) : row == 0 ? "[     ]" : "");
-            System.out.println();
+        for (Suit suit : Suit.values()) {
+            System.out.printf("%-17s", suit.symbol() + " " + suit.name());
         }
-        System.out.println("\n  [XX] Face down    [     ] Empty pile");
+        System.out.print("\n  ");
+        for (Suit suit : Suit.values()) {
+            System.out.printf("%-17s", topOrEmpty(board.foundation(suit)));
+        }
+        System.out.println();
+        renderTableau(board);
+        System.out.println("\n  [XX] Face down    " + EMPTY_SLOT + " Empty pile");
         System.out.println("\n  Moves: " + game.moves() + " | " + statusText(game.status()));
     }
 
-    /** Returns a readable message distinguishing victory, policy exhaustion, and execution limits. */
+    /** Method: Returns a readable message for a game status. */
     public String statusText(GameStatus status) {
         return switch (status) {
             case RUNNING -> "In progress";
             case WON -> "Won - all 52 cards completed";
             case STUCK -> "Not solved - no new move to try";
-            case SEARCH_LIMIT_REACHED -> "Not solved - play limit reached";
+            case LIMIT_REACHED -> "Not solved - play limit reached";
         };
     }
 
-    /** Describes a move using one-based tableau labels and the actual card count. */
+    /**
+     * Method: Describes a move in plain words, using one-based column labels T1 to T7.
+     * Calls: cardCount(), suitName()
+     */
     public String describeMove(Move move) {
         int source = move.source() + 1;
         int destination = move.destination() + 1;
         return switch (move.type()) {
-            case DRAW -> "Draw " + move.count() + (move.count() == 1 ? " card" : " cards") + " from the stock to the waste.";
+            case DRAW -> "Draw " + cardCount(move.count()) + " from the stock to the waste.";
             case RECYCLE -> "Return the waste cards to the stock.";
-            case TABLEAU_TO_TABLEAU -> "Move " + move.count() + (move.count() == 1 ? " card" : " cards")
-                    + " from T" + source + " to T" + destination + ".";
+            case TABLEAU_TO_TABLEAU -> "Move " + cardCount(move.count()) + " from T" + source + " to T" + destination
+                    + ".";
             case TABLEAU_TO_FOUNDATION -> "Move the top card from T" + source + " to the "
-                    + Suit.values()[move.destination()].name().toLowerCase(java.util.Locale.ROOT) + " foundation.";
+                    + suitName(move.destination()) + " foundation.";
             case WASTE_TO_TABLEAU -> "Move the waste card to T" + destination + ".";
-            case WASTE_TO_FOUNDATION -> "Move the waste card to the "
-                    + Suit.values()[move.destination()].name().toLowerCase(java.util.Locale.ROOT) + " foundation.";
-            case FOUNDATION_TO_TABLEAU -> "Move the top card from the "
-                    + Suit.values()[move.source()].name().toLowerCase(java.util.Locale.ROOT)
+            case WASTE_TO_FOUNDATION -> "Move the waste card to the " + suitName(move.destination()) + " foundation.";
+            case FOUNDATION_TO_TABLEAU -> "Move the top card from the " + suitName(move.source())
                     + " foundation to T" + destination + ".";
         };
     }
 
-    /** Reads or displays the shuffle selection; input returns null on cancellation. */
-    public void shuffleConfiguration(solitaire.shuffle.ShuffleConfiguration configuration) {
-        System.out.println("\nShuffle: " + switch (configuration.type()) {
-            case RANDOM -> "Random Shuffle";
-            case IN -> "In-Faro Shuffle";
-            case OUT -> "Out-Faro Shuffle";
-        });
+    /**
+     * Method: Prints the selected shuffle.
+     * Calls: ShuffleType.strategy(), ShuffleStrategy.name() (the chosen shuffle's own version)
+     */
+    public void shuffleConfiguration(ShuffleConfiguration configuration) {
+        System.out.println("\nShuffle: " + configuration.type().strategy().name());
     }
 
-    /** Prints the solver's explanation of its result. */
-    public void solverDetail(String detail) {
-        System.out.println("  Result: " + detail);
+    /** Method: Prints the draw mode that is about to be played. */
+    public void playing(int drawCount) {
+        System.out.println("Playing... (Draw " + drawCount + ")");
     }
-    /** Prints the action about to be replayed. */
+
+    /**
+     * Method: Prints the move about to be replayed.
+     * Calls: describeMove()
+     */
     public void nextMove(Move move) {
         System.out.println("\nNext move: " + describeMove(move));
     }
 
-    /** Prints the simulation report title. */
+    /** Method: Prints a short explanation of how the game ended. */
+    public void resultDetail(String detail) {
+        System.out.println("  Result: " + detail);
+    }
+
+    /**
+     * Method: Prints the simulation report title.
+     * Calls: heading()
+     */
     public void simulationStarted() {
         heading("SOLITAIRE SIMULATION REPORT");
     }
 
-    /** Prints the outcome and move count for one simulated game. */
+    /**
+     * Method: Prints the outcome and move count for one simulated game.
+     * Calls: statusText()
+     */
     public void simulationGame(int gameNumber, GameStatus status, int moves) {
-        System.out.printf(java.util.Locale.ROOT, "Game %d | %s | Moves: %d%n",
-                gameNumber, statusText(status), moves);
+        System.out.printf(Locale.ROOT, "Game %d | %s | Moves: %d%n", gameNumber, statusText(status), moves);
     }
 
-    /** Prints aggregate counts and averages across all simulated games. */
-    public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves, long totalDecisions) {
+    /**
+     * Method: Prints totals and averages across all simulated games.
+     * Calls: section()
+     */
+    public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves,
+                                  long totalDecisions) {
         section("RESULTS");
-        System.out.printf(java.util.Locale.ROOT,
+        System.out.printf(Locale.ROOT,
                 "  Games: %d | Won: %d | Not solved: %d%n"
-                + "  Limit reached: %d | No new moves: %d | Win rate: %.2f%%%n"
-                + "  Average moves: %.2f | Average decisions: %.2f%n",
+                        + "  Limit reached: %d | No new moves: %d | Win rate: %.2f%%%n"
+                        + "  Average moves: %.2f | Average decisions: %.2f%n",
                 count, won, count - won, limitedGames, stuckGames,
                 100.0 * won / count, (double) moves / count, (double) totalDecisions / count);
+    }
+
+    /** Method: Prints how long a simulation took. */
+    public void elapsed(long elapsedNanos) {
+        System.out.printf(Locale.ROOT, "  Elapsed: %.1f seconds%n", elapsedNanos / 1_000_000_000.0);
+    }
+
+    /** Method: Prints the closing message. */
+    public void goodbye() {
+        System.out.println("Thank you for playing!");
+    }
+
+    /**
+     * Method: Prints the seven tableau columns side by side.
+     * Calls: section(), GameState.tableau(), CardPile.cards()
+     */
+    private void renderTableau(GameState board) {
+        section("TABLEAU");
+        System.out.print("  ");
+        for (int column = 1; column <= GameState.TABLEAU_COLUMNS; column++) {
+            System.out.printf("%-9s", "T" + column);
+        }
+        System.out.println();
+        List<List<Card>> columns = board.tableau().stream().map(CardPile::cards).toList();
+        int rows = columns.stream().mapToInt(List::size).max().orElse(0);
+        for (int row = 0; row < Math.max(1, rows); row++) {
+            System.out.print("  ");
+            for (List<Card> column : columns) {
+                Object cell = row < column.size() ? column.get(row) : row == 0 ? EMPTY_SLOT : "";
+                System.out.printf("%-9s", cell);
+            }
+            System.out.println();
+        }
+    }
+
+    /**
+     * Method: Returns the top card's text for any kind of pile, or an empty slot.
+     * Calls: CardPile.isEmpty(), CardPile.top(), Card.toString()
+     */
+    private static String topOrEmpty(CardPile pile) {
+        return pile.isEmpty() ? EMPTY_SLOT : pile.top().toString();
+    }
+
+    /** Method: Returns "1 card" or "N cards". */
+    private static String cardCount(int count) {
+        return count + (count == 1 ? " card" : " cards");
+    }
+
+    /** Method: Returns the lower-case suit name for a foundation index. */
+    private static String suitName(int foundationIndex) {
+        return Suit.values()[foundationIndex].name().toLowerCase(Locale.ROOT);
     }
 }

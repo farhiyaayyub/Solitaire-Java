@@ -1,54 +1,71 @@
 package solitaire.pile;
 
-import solitaire.model.Card;
-
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 
+import solitaire.model.Card;
+
 /**
- * Stores cards waiting to be drawn.
+ * Face-down cards waiting to be drawn to the waste.
+ *
+ * <p>Type: final class, subclass of CardPile.
+ * OOP: INHERITANCE (extends CardPile), POLYMORPHISM (overrides accepts and copy).
  *
  * @author Farhiya Ayyub
  */
-public final class StockPile {
-    private final Deque<Card> cards = new ArrayDeque<>();
+public final class StockPile extends CardPile {
 
-    /** Returns the number of cards in this pile or deck. */
-    public int size() {
-        return cards.size();
+    /** Constructor: Creates an empty stock. */
+    public StockPile() {
     }
 
-    /** Conceals the supplied card and places it at the bottom of the stock. */
-    public void addBottom(Card card) {
-        card.conceal();
-        cards.addLast(card);
-    }
-
-    /** Transfers the next stock card to the waste, revealing it. */
-    public void drawTo(WastePile waste) {
-        waste.push(cards.removeFirst());
-    }
-
-    /** Restores waste cards to stock in draw order; requires empty stock and nonempty waste. */
-    public void recycle(WastePile waste) {
-        if (!cards.isEmpty() || waste.size() == 0) throw new IllegalStateException("Cannot recycle");
-        while (waste.size() > 0) {
-            Card card = waste.pop();
+    /**
+     * Constructor: Creates a face-down stock; the first card in the list is the first card drawn.
+     * Calls: Card.conceal(), addToTop()
+     */
+    public StockPile(List<Card> drawOrder) {
+        for (int cardIndex = drawOrder.size() - 1; cardIndex >= 0; cardIndex--) {
+            Card card = drawOrder.get(cardIndex);
             card.conceal();
-            cards.addFirst(card);
+            addToTop(card);
         }
     }
 
-    /** Returns an unmodifiable list of detached card snapshots. */
-    public List<Card> cards() {
-        return cards.stream().map(Card::copy).toList();
+    /** Method (override): Players never place cards on the stock; it is refilled only by recycling the waste. */
+    @Override
+    public boolean accepts(Card card) {
+        return false;
     }
 
-    /** Returns a detached copy, including card visibility. */
+    /**
+     * Method (override): Returns a detached copy, including card visibility.
+     * Calls: copyCardsInto()
+     */
+    @Override
     public StockPile copy() {
-        StockPile pileCopy = new StockPile();
-        for (Card card : cards) pileCopy.cards.addLast(card.copy());
-        return pileCopy;
+        // Object: StockPile - a new empty stock that receives the copied cards.
+        return copyCardsInto(new StockPile());
+    }
+
+    /**
+     * Method: Moves the top stock card to the waste, where it is turned face up.
+     * Calls: takeTop(), WastePile.receiveDrawn()
+     */
+    public void drawTo(WastePile waste) {
+        waste.receiveDrawn(takeTop());
+    }
+
+    /**
+     * Method: Turns the whole waste back into the stock in its original draw order; requires an empty stock.
+     * Calls: isEmpty(), WastePile.isEmpty(), WastePile.takeTop(), Card.conceal(), addToTop()
+     */
+    public void recycle(WastePile waste) {
+        if (!isEmpty() || waste.isEmpty()) {
+            throw new IllegalStateException("Recycle needs an empty stock and a nonempty waste");
+        }
+        while (!waste.isEmpty()) {
+            Card card = waste.takeTop();
+            card.conceal();
+            addToTop(card);
+        }
     }
 }

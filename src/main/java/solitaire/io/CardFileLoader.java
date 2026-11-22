@@ -17,12 +17,18 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Reads a complete deck from whitespace-separated suit-rank tokens.
+ * Reads a complete deck from whitespace-separated suit-rank tokens such as H-A or S-10.
+ *
+ * <p>Type: final class; reads and validates card files.
+ * OOP: ABSTRACTION (callers just call load(path) and get a Deck), ENCAPSULATION (private parsing helpers).
+ *
  * @author Farhiya Ayyub
  */
 public final class CardFileLoader {
     /**
-     * Returns a deck in file order, with the first token drawn first.
+     * Method: Returns a deck in file order, with the first token drawn first.
+     * Calls: resolveFile(), Files.newBufferedReader(), parseCard(), Set.add() (finds duplicates)
+     *
      * @throws IOException if the file cannot be read
      * @throws IllegalArgumentException if a token, duplicate, or card count is invalid
      */
@@ -30,6 +36,7 @@ public final class CardFileLoader {
         Path resolvedPath = resolveFile(filePath);
         List<Card> cards = new ArrayList<>();
         Set<Card> uniqueCards = new HashSet<>();
+        // The reader is closed automatically at the end of this block, even if an error happens.
         try (BufferedReader reader = Files.newBufferedReader(resolvedPath, StandardCharsets.UTF_8)) {
             String line;
             int lineNumber = 0;
@@ -53,10 +60,14 @@ public final class CardFileLoader {
         if (cards.size() != Deck.CARD_COUNT) {
             throw new IllegalArgumentException("Expected " + Deck.CARD_COUNT + " cards, found " + cards.size());
         }
+        // Object: Deck - built from the cards in file order.
         return new Deck(cards);
     }
 
-    /** Finds the requested file, including the resources folder for bare names. */
+    /**
+     * Method: Finds the requested file; a bare file name is also looked up in the resources folder.
+     * Calls: Files.exists(), Files.isDirectory(), Path.resolve()
+     */
     private Path resolveFile(Path requestedPath) throws IOException {
         Path resolvedPath = requestedPath;
         if (!Files.exists(requestedPath) && !requestedPath.isAbsolute()
@@ -73,7 +84,10 @@ public final class CardFileLoader {
         return resolvedPath;
     }
 
-    /** Converts one suit-rank token into a card. */
+    /**
+     * Method: Converts one suit-rank token, such as H-A, into a card.
+     * Calls: parseSuit(), parseRank()
+     */
     private Card parseCard(String token, int lineNumber) {
         String normalizedToken = token.toUpperCase(Locale.ROOT);
         String[] parts = normalizedToken.split("-", -1);
@@ -83,22 +97,33 @@ public final class CardFileLoader {
         }
         Suit suit = parseSuit(parts[0], lineNumber);
         Rank rank = parseRank(parts[1], lineNumber);
+        // Object: Card - the card for this token.
         return new Card(suit, rank);
     }
 
-    /** Looks up a suit code or reports its line-specific error. */
+    /**
+     * Method: Looks up a suit code or reports its line-specific error.
+     * Calls: Suit.code()
+     */
     private Suit parseSuit(String suitCode, int lineNumber) {
         for (Suit suit : Suit.values()) {
-            if (suit.code().equals(suitCode)) return suit;
+            if (suit.code().equals(suitCode)) {
+                return suit;
+            }
         }
         throw new IllegalArgumentException("Unknown suit '" + suitCode + "' on line " + lineNumber
                 + ". Allowed: H, D, C, S.");
     }
 
-    /** Looks up a rank symbol or reports its line-specific error. */
+    /**
+     * Method: Looks up a rank symbol or reports its line-specific error.
+     * Calls: Rank.symbol()
+     */
     private Rank parseRank(String rankSymbol, int lineNumber) {
         for (Rank rank : Rank.values()) {
-            if (rank.symbol().equals(rankSymbol)) return rank;
+            if (rank.symbol().equals(rankSymbol)) {
+                return rank;
+            }
         }
         throw new IllegalArgumentException("Unknown rank '" + rankSymbol + "' on line " + lineNumber
                 + ". Allowed: A, 2-10, J, Q, K.");
