@@ -10,37 +10,48 @@ import solitaire.enums.Rank;
 import solitaire.enums.Suit;
 
 /**
- * A full 52-card deck. Cards are stored with the next card to draw at the end, so drawing is constant time.
+ * A deck of exactly 52 different cards. The next card to draw is kept at the end of the list, because removing
+ * the last element of an ArrayList is instant while removing the first would shift every other card.
  *
- * <p>Type: final class.
- * OOP: ENCAPSULATION (private card list; outside code only gets copies from drawOrder()).
+ * <p>Encapsulation: the card list is private; outside code only gets copies through drawOrder().
  *
  * @author Farhiya Ayyub
  */
 public final class Deck {
-    /** Constant: Number of cards in a standard deck (4 suits x 13 ranks = 52). */
+    /** 4 suits x 13 ranks = 52 cards. */
     public static final int CARD_COUNT = Suit.values().length * Rank.values().length;
 
-    // Field: the cards, with the next card to draw at the end of the list.
     private final List<Card> cards = new ArrayList<>();
 
-    /** Constructor: Creates a standard deck in its default order. */
+    /**
+     * Creates the 52 cards in suit order (Hearts, Diamonds, Clubs, Spades), Ace to King within each suit. The King of
+     * Spades is drawn first, because the next card to draw is at the end of the list.
+     */
     public Deck() {
         for (Suit suit : Suit.values()) {
             for (Rank rank : Rank.values()) {
-                // Object: Card - one for each suit and rank, 52 in total.
                 cards.add(new Card(suit, rank));
             }
         }
     }
 
     /**
-     * Constructor: Creates a deck from a top-first card list; requires exactly 52 unique cards.
-     * Calls: Set.add() (finds duplicates), Card.code(), Card.copy(), Collections.reverse()
+     * Creates a deck from a list whose first card is the first to be drawn. Stores copies, so later changes to the
+     * list's cards do not affect the deck.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link Card#code} - names the duplicate in the error</li>
+     *   <li>{@link Card#copy} - stores copies, not the caller's cards</li>
+     * </ul>
+     *
+     * @param drawOrder the cards in draw order; the first element is the first card to be drawn
+     * @throws IllegalArgumentException for a duplicate card or a card count other than 52
      */
     public Deck(List<Card> drawOrder) {
         Set<Card> uniqueCards = new HashSet<>();
         for (Card card : drawOrder) {
+            // Set.add returns false when an equal card (same suit and rank) is already in the set.
             if (!uniqueCards.add(card)) {
                 throw new IllegalArgumentException("Duplicate card " + card.code());
             }
@@ -49,12 +60,22 @@ public final class Deck {
         if (cards.size() != CARD_COUNT) {
             throw new IllegalArgumentException("Expected " + CARD_COUNT + " cards, found " + cards.size());
         }
+        // Reversed so the first card of drawOrder is at the end of the list, where draw() takes it.
         Collections.reverse(cards);
     }
 
     /**
-     * Method: Returns an unmodifiable list of detached card copies in top-first draw order.
-     * Calls: Card.copy(), List.copyOf()
+     * Returns copies of the cards in the order they will be drawn (first element = next card). The list cannot be
+     * modified, and changing the copied cards does not affect the deck.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link Card#copy} - protects the deck's own cards</li>
+     * </ul>
+     *
+     * <p>Called by: {@code ShuffleConfiguration.prepareDeck()}.
+     *
+     * @return copies of the cards in the order they will be drawn (first element = next card)
      */
     public List<Card> drawOrder() {
         List<Card> drawOrderSnapshot = new ArrayList<>();
@@ -64,22 +85,41 @@ public final class Deck {
         return List.copyOf(drawOrderSnapshot);
     }
 
-    /** Method: Throws IllegalStateException unless exactly 52 distinct cards are present. */
+    /**
+     * Checks that the deck holds exactly 52 different cards.
+     *
+     * <p>Called by: {@code ShuffleConfiguration.prepareDeck()}.
+     *
+     * @throws IllegalStateException unless the deck holds exactly 52 cards and no two are equal
+     */
     public void verify() {
         if (cards.size() != CARD_COUNT || new HashSet<>(cards).size() != CARD_COUNT) {
             throw new IllegalStateException("Deck must contain " + CARD_COUNT + " unique cards");
         }
     }
 
-    /** Method: Removes and returns the next card; throws IllegalStateException when the deck is empty. */
+    /**
+     * Removes and returns the next card (the end of the list).
+     *
+     * <p>Called by: {@code GameState.deal()}.
+     *
+     * @return the card that was removed
+     * @throws IllegalStateException if the deck is empty
+     */
     public Card draw() {
         if (cards.isEmpty()) {
             throw new IllegalStateException("Empty deck");
         }
-        return cards.remove(cards.size() - 1);
+        return cards.removeLast();
     }
 
-    /** Method: Returns the number of cards left in the deck. */
+    /**
+     * Returns how many cards have not been drawn yet.
+     *
+     * <p>Called by: {@code GameState.deal()}.
+     *
+     * @return how many cards have not been drawn yet
+     */
     public int size() {
         return cards.size();
     }

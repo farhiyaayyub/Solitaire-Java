@@ -5,15 +5,42 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e45a7543-b8d4-4d3a-b3ef-0247e6b02c35" name="Changes" comment="Fixed ShuffleStrategy">
-      <change afterPath="$PROJECT_DIR$/.idea/claudeCodeEditorTabs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/FaroShuffle.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/InFaroShuffle.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/NoShuffle.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/OutFaroShuffle.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/RandomShuffle.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleStrategy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/SolitaireApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/SolitaireApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/GameStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/GameStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/MoveType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/MoveType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/Rank.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/Rank.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/Suit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/Suit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/GameController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/GameController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/GameState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/GameState.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/SolitaireGame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/SolitaireGame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/CardFileLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/CardFileLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleColor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleColor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleInput.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleInput.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/model/Card.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/model/Card.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/model/Deck.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/model/Deck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/Move.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/Move.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveGenerator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveValidator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/CardPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/CardPile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/FoundationPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/FoundationPile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/StockPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/StockPile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/TableauPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/TableauPile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/WastePile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/WastePile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/FaroShuffle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/FaroShuffle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/InFaroShuffle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/InFaroShuffle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/NoShuffle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/NoShuffle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/OutFaroShuffle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/OutFaroShuffle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/RandomShuffle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/RandomShuffle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/ObservableBoard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/ObservableBoard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolitaireSolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolitaireSolver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolvableDealProvider.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolvableDealProvider.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/VisibleSolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/VisibleSolver.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,6 +51,12 @@
     <option name="cachedIndexableFilesCount" value="50" />
   </component>
   <component name="Git.Settings">
+    <option name="PUSH_TAGS">
+      <GitPushTagMode>
+        <option name="argument" value="--tags" />
+        <option name="title" value="All" />
+      </GitPushTagMode>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -44,62 +77,65 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.016240210079659" />
-      <entry key="MS500" value="2.177429061300115" />
-      <entry key="S2" value="6.250285463062429" />
-      <entry key="S5" value="9.371946340797368" />
-      <entry key="S10" value="10.97336517753006" />
-      <entry key="S30" value="13.249077980569973" />
-      <entry key="S60" value="19.539544784183903" />
-      <entry key="M2" value="33.27011859432347" />
-      <entry key="M5" value="57.541516473875724" />
-      <entry key="M10" value="89.59432198823237" />
-      <entry key="M15" value="121.57787074960535" />
-      <entry key="M30" value="199.4457845037632" />
-      <entry key="H1" value="362.7512310407447" />
-      <entry key="H2" value="785.5760688469913" />
-      <entry key="H4" value="1606.4198741238688" />
-      <entry key="D1" value="4384.085964511273" />
-      <entry key="W1" value="5565.709827187409" />
+      <entry key="MS100" value="1.0015754721859806" />
+      <entry key="MS500" value="1.2750946523415343" />
+      <entry key="S2" value="1.7242200382393964" />
+      <entry key="S5" value="1.8789177085994915" />
+      <entry key="S10" value="1.9375061112331438" />
+      <entry key="S30" value="1.9787190369248289" />
+      <entry key="S60" value="1.989302298048897" />
+      <entry key="M2" value="1.9946367668897511" />
+      <entry key="M5" value="1.9978512451357737" />
+      <entry key="M10" value="1.9989251498759475" />
+      <entry key="M15" value="1.9994184399207162" />
+      <entry key="M30" value="2.209968175273688" />
+      <entry key="H1" value="13.779774575840754" />
+      <entry key="H2" value="143.56481196885667" />
+      <entry key="H4" value="683.934579395598" />
+      <entry key="D1" value="3802.6657104808837" />
+      <entry key="W1" value="5455.315792170838" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="6.755717355141371E-221" />
-      <entry key="S2" value="9.066044946740138E-56" />
-      <entry key="S5" value="9.615395385087262E-23" />
-      <entry key="S10" value="9.805812248400051E-12" />
-      <entry key="S30" value="2.1403979409908338E-4" />
-      <entry key="S60" value="0.014630098909408787" />
-      <entry key="M2" value="0.12095494578316639" />
-      <entry key="M5" value="0.42958534020938344" />
-      <entry key="M10" value="0.6554276010433067" />
-      <entry key="M15" value="0.7545415342739903" />
-      <entry key="M30" value="0.868643684001259" />
-      <entry key="H1" value="0.9324366013462634" />
-      <entry key="H2" value="0.9860500178225737" />
-      <entry key="H4" value="1.1262283812345995" />
-      <entry key="D1" value="1.7207805846504625" />
-      <entry key="W1" value="1.9544368024062804" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="5.183912490711846E-183" />
+      <entry key="S60" value="7.199939229404555E-92" />
+      <entry key="M2" value="2.6832702490439764E-46" />
+      <entry key="M5" value="5.908343904364544E-19" />
+      <entry key="M10" value="7.686575248031173E-10" />
+      <entry key="M15" value="8.391158452234212E-7" />
+      <entry key="M30" value="9.160328575253549E-4" />
+      <entry key="H1" value="0.03027986994854867" />
+      <entry key="H2" value="0.1776913519569594" />
+      <entry key="H4" value="0.47809052932006113" />
+      <entry key="D1" value="1.4917845656166933" />
+      <entry key="W1" value="1.9149688741199515" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9166121441474394" />
-      <entry key="MS500" value="2.1418344756971384" />
-      <entry key="S2" value="6.226089209239279" />
-      <entry key="S5" value="9.357455380320257" />
-      <entry key="S10" value="10.964881948103235" />
-      <entry key="S30" value="13.245780477057936" />
-      <entry key="S60" value="19.55027887168109" />
-      <entry key="M2" value="33.383744364022135" />
-      <entry key="M5" value="57.96223421977279" />
-      <entry key="M10" value="90.24263149676172" />
-      <entry key="M15" value="122.32653220562729" />
-      <entry key="M30" value="200.3105044207307" />
-      <entry key="H1" value="363.6812032371231" />
-      <entry key="H2" value="786.5605314911652" />
-      <entry key="H4" value="1607.5450059396612" />
-      <entry key="D1" value="4385.806366401891" />
-      <entry key="W1" value="5567.664196386404" />
+      <entry key="MS100" value="0.9536213530732897" />
+      <entry key="MS500" value="1.2406896858608583" />
+      <entry key="S2" value="1.7049288134582234" />
+      <entry key="S5" value="1.8697013202342836" />
+      <entry key="S10" value="1.932612581362558" />
+      <entry key="S30" value="1.9770208246204688" />
+      <entry key="S60" value="1.9884445762792249" />
+      <entry key="M2" value="1.9942057340239152" />
+      <entry key="M5" value="1.99767830838466" />
+      <entry key="M10" value="1.9988385947984753" />
+      <entry key="M15" value="1.999361549155048" />
+      <entry key="M30" value="2.2108511989015933" />
+      <entry key="H1" value="13.809959978770973" />
+      <entry key="H2" value="143.74221004813487" />
+      <entry key="H4" value="684.4122008164902" />
+      <entry key="D1" value="3804.1571661461826" />
+      <entry key="W1" value="5457.230694720775" />
     </decayedShown>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6,

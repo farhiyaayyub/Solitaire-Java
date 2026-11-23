@@ -7,22 +7,25 @@ import solitaire.model.Card;
 import solitaire.model.Deck;
 
 /**
- * The player's shuffle settings. Creating a configuration only validates it; {@link #prepareDeck(Deck)} does the work.
+ * The player's shuffle settings: which shuffle, whether to randomize first, and the seed. Creating one only checks
+ * the settings; {@link #prepareDeck(Deck)} does the shuffling.
  *
- * <p>Type: record (an immutable data class; Java creates its fields, constructor, and the getters type(),
- * randomizedInitial(), and seed()).
- * OOP: ENCAPSULATION (fields cannot change after creation), POLYMORPHISM (uses any ShuffleStrategy).
+ * <p>It is a record, so the settings cannot change after they are created. Polymorphism: it works with any
+ * ShuffleStrategy.
  *
  * @param type              the selected shuffle
- * @param randomizedInitial whether a seeded random shuffle is applied first (Faro shuffles only)
- * @param seed              seed for every random step, so the same settings reproduce the same deal
+ * @param randomizedInitial true to apply a seeded random shuffle before the Faro shuffle (Faro shuffles only),
+ *                          because a perfect shuffle of a sorted deck always gives the same predictable deal
+ * @param seed              seed for every random step; the same settings always produce the same deal
  * @author Farhiya Ayyub
  */
 public record ShuffleConfiguration(ShuffleType type, boolean randomizedInitial, long seed) {
 
     /**
-     * Constructor (compact): Rejects a missing type and a randomized start for shuffles other than Faro.
-     * Calls: Objects.requireNonNull(), ShuffleType.isFaro()
+     * Checks the settings when the record is created.
+     *
+     * @throws NullPointerException if type is null
+     * @throws IllegalArgumentException if randomizedInitial is true for a shuffle that is not Faro
      */
     public ShuffleConfiguration {
         Objects.requireNonNull(type, "type");
@@ -31,31 +34,59 @@ public record ShuffleConfiguration(ShuffleType type, boolean randomizedInitial, 
         }
     }
 
-    /** Method: Returns the same settings with the seed moved forward, used for consecutive simulation games. */
+    /**
+     * Returns a new configuration with seed + offset and the same other settings; this record is not changed. Game n of
+     * a simulation uses offset n, so every game is different but repeatable.
+     *
+     * <p>Called by: {@code GameController.simulate()}.
+     *
+     * @param offset the number added to the seed
+     * @return a new configuration with seed + offset and the same other settings
+     */
     public ShuffleConfiguration withSeedOffset(long offset) {
-        // Object: ShuffleConfiguration - a new record, because records cannot be changed.
         return new ShuffleConfiguration(type, randomizedInitial, seed + offset);
     }
 
     /**
-     * Method: Shuffles a new standard deck using these settings.
-     * Calls: prepareDeck(Deck)
+     * Returns a new standard deck shuffled with these settings.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link #prepareDeck} - does the work with a new standard deck</li>
+     * </ul>
+     *
+     * <p>Called by: {@code GameController.manual()}, {@code GameController.simulate()}.
+     *
+     * @return a new standard deck shuffled with these settings
      */
     public Deck prepareDeck() {
-        // Object: Deck - a new standard 52-card deck.
         return prepareDeck(new Deck());
     }
 
     /**
-     * Method: Shuffles a copy of the supplied deck; the original deck is not changed.
-     * Calls: Deck.drawOrder(), ShuffleType.strategy(), ShuffleStrategy.shuffle(), Deck.verify()
+     * Returns a new shuffled deck built from the supplied deck's order; the supplied deck is not changed. Steps: copy
+     * the order, apply a random shuffle first if randomizedInitial, apply the chosen strategy, then check that the
+     * result still has 52 unique cards.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link Deck#drawOrder} - copies the deck's card order</li>
+     *   <li>{@link ShuffleType#strategy()} - gets the chosen shuffle object</li>
+     *   <li>{@link ShuffleStrategy#shuffle} - runs that shuffle</li>
+     *   <li>{@link Deck#verify} - confirms 52 unique cards remain</li>
+     * </ul>
+     *
+     * <p>Called by: {@code GameController.automatic()}, {@link #prepareDeck}.
+     *
+     * @param initialDeck the deck to start from; it is not changed
+     * @return a new shuffled deck built from the supplied deck's order
      */
     public Deck prepareDeck(Deck initialDeck) {
         List<Card> drawOrder = initialDeck.drawOrder();
         if (randomizedInitial) {
             drawOrder = ShuffleType.RANDOM.strategy().shuffle(drawOrder, seed);
         }
-        // Object: Deck - built from the shuffled cards. shuffle() runs the chosen strategy's own version.
+        // type.strategy() may be any ShuffleStrategy; Java runs the shuffle() of the actual strategy object.
         Deck deck = new Deck(type.strategy().shuffle(drawOrder, seed));
         deck.verify();
         return deck;

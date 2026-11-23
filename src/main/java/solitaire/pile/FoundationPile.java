@@ -6,28 +6,45 @@ import solitaire.enums.Suit;
 import solitaire.model.Card;
 
 /**
- * One foundation pile, built up from Ace to King in a single suit.
+ * One of the four foundation piles. It collects a single suit in order from Ace to King; when it holds 13 cards,
+ * that suit is complete.
  *
- * <p>Type: final class, subclass of CardPile.
- * OOP: INHERITANCE (extends CardPile), POLYMORPHISM (overrides accepts and copy), ENCAPSULATION (private suit).
+ * <p>Inheritance: it extends CardPile. Polymorphism: it overrides accepts() and copy().
  *
  * @author Farhiya Ayyub
  */
 public final class FoundationPile extends CardPile {
-    // Field: the suit this foundation collects; set once in the constructor.
     private final Suit suit;
 
     /**
-     * Constructor: Creates an empty foundation for the supplied suit.
-     * Calls: Objects.requireNonNull()
+     * Creates an empty foundation for one suit.
+     *
+     * @param suit the suit this foundation collects
+     * @throws NullPointerException if suit is {@code null}
      */
     public FoundationPile(Suit suit) {
         this.suit = Objects.requireNonNull(suit);
     }
 
     /**
-     * Method (override): Accepts a face-up card of this suit exactly one rank higher than the current top.
-     * Calls: Card.isFaceUp(), Card.suit(), Card.rank(), Rank.value(), size()
+     * Returns {@code true} only for a face-up card of this suit whose rank value is size() + 1: an Ace on an empty
+     * foundation, a 2 on the Ace, and so on up to the King.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link Card#isFaceUp} - only face-up cards may move</li>
+     *   <li>{@link Card#suit()} - must match this foundation's suit</li>
+     *   <li>{@link Card#rank()} - gets the rank to compare</li>
+     *   <li>{@code Rank.value()} - gives the rank as a number</li>
+     *   <li>{@link CardPile#size} - the next rank needed is size() + 1</li>
+     * </ul>
+     *
+     * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()} (through CardPile),
+     * {@link CardPile#place} (through CardPile).
+     *
+     * @param card the card to check
+     * @return {@code true} only for a face-up card of this suit whose rank value is size() + 1: an Ace on an empty
+     *     foundation, a 2 on the Ace, and so on up to the King
      */
     @Override
     public boolean accepts(Card card) {
@@ -35,12 +52,19 @@ public final class FoundationPile extends CardPile {
     }
 
     /**
-     * Method (override): Returns a detached copy, including card visibility.
-     * Calls: copyCardsInto()
+     * Returns a new foundation of the same suit holding copies of these cards.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link CardPile#copyCardsInto} - fills the new pile with copies</li>
+     * </ul>
+     *
+     * <p>Called by: {@code GameState.copy()}.
+     *
+     * @return a new foundation of the same suit holding copies of these cards
      */
     @Override
     public FoundationPile copy() {
-        // Object: FoundationPile - a new empty foundation of the same suit that receives the copied cards.
         return copyCardsInto(new FoundationPile(suit));
     }
 }

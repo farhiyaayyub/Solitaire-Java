@@ -15,28 +15,28 @@ import solitaire.move.Move;
 import solitaire.move.MoveGenerator;
 
 /**
- * Builds a demonstration deal that is known to be winnable, together with its checked winning moves.
+ * Builds a Draw 1 demonstration deal that is known to be winnable, together with winning moves that were checked by
+ * actually playing them.
  *
- * <p>Type: final class; used by the "guaranteed" command.
- * OOP: ENCAPSULATION (the VerifiedDeal record protects the board and solution with copies).
+ * <p>Used by the "guaranteed" command. Encapsulation: the VerifiedDeal record protects the board and the moves with
+ * copies.
  *
  * @author Farhiya Ayyub
  */
 public final class SolvableDealProvider {
-    // Constant: safety limit so verification can never loop forever.
+    // Verification stops with an error after this many moves, so a mistake in the deal can never loop forever.
     private static final int MAX_VERIFICATION_MOVES = 200;
 
     /**
-     * Type: record inside SolvableDealProvider. A starting board and a winning move list that was checked by
-     * actually playing it.
+     * A starting board and a winning move list that was checked by actually playing it.
      *
-     * @param state    the starting board
+     * @param state the starting board
      * @param solution the winning moves, in order
      */
     public record VerifiedDeal(GameState state, List<Move> solution) {
         /**
-         * Constructor (compact): Copies the board and move list to protect the stored solution.
-         * Calls: GameState.copy(), List.copyOf()
+         * Stores a copy of the board and an unmodifiable copy of the moves, so changing the originals later does not
+         * change the stored deal.
          */
         public VerifiedDeal {
             state = state.copy();
@@ -44,8 +44,17 @@ public final class SolvableDealProvider {
         }
 
         /**
-         * Method (override): Returns a detached board copy so callers cannot modify the stored board.
-         * Calls: GameState.copy()
+         * Returns a copy of the stored board, so callers cannot change it. Replaces the getter that Java generates for
+         * the record.
+         *
+         * <p>Calls:
+         * <ul>
+         *   <li>{@link GameState#copy} - gives out a copy, not the stored board</li>
+         * </ul>
+         *
+         * <p>Called by: {@code GameController.guaranteed()}.
+         *
+         * @return a copy of the stored board, so callers cannot change it
          */
         @Override
         public GameState state() {
@@ -54,17 +63,38 @@ public final class SolvableDealProvider {
     }
 
     /**
-     * Method: Deals every card in ascending rank order (Aces exposed first) and verifies the deal by playing it:
-     * always move a card to a foundation when possible, otherwise draw.
-     * Calls: ascendingDrawOrder(), GameState.deal(), GameState.copy(), GameState.won(), MoveGenerator.generate(),
-     * SolitaireGame.apply(), GameState.verify()
+     * Returns a Draw 1 deal together with moves proven to win it.
+     *
+     * <p>Algorithm: build, then verify by playing.
+     * <ol>
+     *   <li>Deal the cards in ascending rank order, so low cards are on top.</li>
+     *   <li>On a copy, until it is won: play the first legal move to a foundation; if there is none, draw 1 card.</li>
+     *   <li>Check 52 unique cards after every move and record each move.</li>
+     *   <li>Return the original board and the recorded moves.</li>
+     * </ol>
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@code ascendingDrawOrder()} - orders the cards low to high</li>
+     *   <li>{@link GameState#deal} - deals them onto a board</li>
+     *   <li>{@link GameState#copy} - tests the moves on a copy</li>
+     *   <li>{@link GameState#won} - stops when the test game is won</li>
+     *   <li>{@link MoveGenerator#generate} - finds a move to a foundation</li>
+     *   <li>{@link GameState#stock()} - checks whether a draw is still possible</li>
+     *   <li>{@code CardPile.isEmpty()} - stops with an error if no move is left</li>
+     *   <li>{@link SolitaireGame#apply} - checks and plays each move</li>
+     *   <li>{@link GameState#verify} - confirms 52 unique cards after each move</li>
+     * </ul>
+     *
+     * <p>Called by: {@code GameController.guaranteed()}.
+     *
+     * @return a Draw 1 deal together with moves proven to win it
+     * @throws IllegalStateException if the test game gets stuck or needs more than 200 moves
      */
     public VerifiedDeal create() {
-        // Object: Deck - built from the ascending card order.
         GameState initialBoard = GameState.deal(new Deck(ascendingDrawOrder()));
         GameState workingBoard = initialBoard.copy();
         List<Move> solution = new ArrayList<>();
-        // Object: MoveGenerator - lists the legal moves on the working board.
         MoveGenerator generator = new MoveGenerator();
         while (!workingBoard.won()) {
             if (solution.size() >= MAX_VERIFICATION_MOVES) {
@@ -76,7 +106,6 @@ public final class SolvableDealProvider {
                     .findFirst()
                     .orElse(null);
             if (move == null && !workingBoard.stock().isEmpty()) {
-                // Object: Move - a draw of one card.
                 move = new Move(MoveType.DRAW, 0, 0, 1);
             }
             if (move == null) {
@@ -86,19 +115,22 @@ public final class SolvableDealProvider {
             workingBoard.verify();
             solution.add(move);
         }
-        // Object: VerifiedDeal - the starting board with its checked winning moves.
         return new VerifiedDeal(initialBoard, solution);
     }
 
     /**
-     * Method: Orders the cards so each column holds ascending ranks and the stock continues upward.
-     * Calls: Collections.reverse()
+     * Returns a draw order that deals the low cards to the columns with the lowest card of each column on top, and
+     * leaves the higher ranks in the stock in ascending order, so cards can go straight to the foundations.
+     *
+     * <p>Called by: {@link #create}.
+     *
+     * @return a draw order that deals the low cards to the columns with the lowest card of each column on top, and
+     *     leaves the higher ranks in the stock in ascending order, so cards can go straight to the foundations
      */
     private static List<Card> ascendingDrawOrder() {
         List<Card> cardsByAscendingRank = new ArrayList<>();
         for (Rank rank : Rank.values()) {
             for (Suit suit : Suit.values()) {
-                // Object: Card - one for each rank and suit.
                 cardsByAscendingRank.add(new Card(suit, rank));
             }
         }

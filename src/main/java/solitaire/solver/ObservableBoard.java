@@ -8,14 +8,15 @@ import solitaire.game.GameState;
 import solitaire.model.Card;
 
 /**
- * What a player can actually see: an immutable view of the board with every face-down card masked. The solver
- * decides using only this view, so it never uses hidden information.
+ * What a player can see of the board: face-up cards are shown, face-down cards are replaced by a hidden marker.
+ * The solver scores moves using only this view, so it cannot use hidden cards even by accident. Because it is a
+ * record, two views with the same visible cards are equal, so it can be used as a Map key to recognise a position.
  *
- * <p>Type: record (an immutable data class).
- * OOP: ABSTRACTION (hides face-down cards from the solver), ENCAPSULATION (lists are copied and cannot change).
+ * <p>Abstraction: it hides face-down cards from the solver. It is a record, and its lists are copied, so it cannot
+ * change after it is made.
  *
- * @param drawCount   cards turned per draw
- * @param stockSize   number of face-down stock cards
+ * @param drawCount   cards turned per draw (1 or 3)
+ * @param stockSize   number of stock cards; their identities stay hidden
  * @param waste       waste cards, bottom first (the playable card is last)
  * @param tableau     tableau columns, each bottom first
  * @param foundations number of cards in each foundation, in {@link Suit} order
@@ -25,31 +26,43 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
                               List<List<VisibleCard>> tableau, List<Integer> foundations) {
 
     /**
-     * Type: record inside ObservableBoard. A card as seen by the player: rank and suit when face up, or rank 0 and
-     * no suit when face down.
+     * One card as the player sees it: its rank value (1 to 13) and suit when face up, or rank 0 and a null suit when
+     * face down.
      *
      * @param rank the rank value, or 0 when hidden
      * @param suit the suit, or null when hidden
      */
     public record VisibleCard(int rank, Suit suit) {
-        /** Method: Reports whether this card is face down. */
+        /**
+         * Returns {@code true} if the card is face down (rank 0).
+         *
+         * <p>Called by: {@code VisibleSolver.tableauMoveScore()}.
+         *
+         * @return {@code true} if the card is face down (rank 0)
+         */
         public boolean isHidden() {
             return rank == 0;
         }
 
         /**
-         * Method: Reports whether this visible card belongs to a red suit.
-         * Calls: Suit.isRed()
+         * Returns {@code true} for a face-up Heart or Diamond; returns {@code false} for a hidden card, whose suit is
+         * unknown.
+         *
+         * <p>Calls:
+         * <ul>
+         *   <li>{@link Suit#isRed} - the color belongs to the suit</li>
+         * </ul>
+         *
+         * <p>Called by: {@code VisibleSolver.foundationScore()}.
+         *
+         * @return {@code true} for a face-up Heart or Diamond
          */
         public boolean isRed() {
             return suit != null && suit.isRed();
         }
     }
 
-    /**
-     * Constructor (compact): Copies each collection so the caller cannot change the observation.
-     * Calls: List.copyOf()
-     */
+    /** Stores unmodifiable copies of the lists, so the view cannot change after it is made. */
     public ObservableBoard {
         waste = List.copyOf(waste);
         tableau = tableau.stream().map(List::copyOf).toList();
@@ -57,12 +70,27 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
     }
 
     /**
-     * Method (static): Builds the player's view of a board, masking every face-down card.
-     * Calls: GameState.drawCount(), GameState.stock(), GameState.waste(), GameState.tableau(),
-     * GameState.foundation(), CardPile.cards(), CardPile.size(), observe()
+     * Builds the view of a board: every waste and tableau card is passed through observe(), and only the size of the
+     * stock and of each foundation is kept.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link GameState#drawCount()} - keeps the draw mode</li>
+     *   <li>{@link GameState#stock()} - keeps only the stock size</li>
+     *   <li>{@code CardPile.size()} - counts each foundation</li>
+     *   <li>{@link GameState#waste()} - gets the waste cards</li>
+     *   <li>{@code CardPile.cards()} - gets copies of the cards</li>
+     *   <li>{@code observe()} - hides each face-down card</li>
+     *   <li>{@link GameState#tableau()} - gets the seven columns</li>
+     *   <li>{@link GameState#foundation} - gets each foundation</li>
+     * </ul>
+     *
+     * <p>Called by: {@link VisibleSolver#solve}.
+     *
+     * @param state the full board
+     * @return what a player can see of the board
      */
     public static ObservableBoard from(GameState state) {
-        // Object: ObservableBoard - built from the board's visible information only.
         return new ObservableBoard(state.drawCount(), state.stock().size(),
                 state.waste().cards().stream().map(ObservableBoard::observe).toList(),
                 state.tableau().stream().map(pile -> pile.cards().stream().map(ObservableBoard::observe).toList())
@@ -71,8 +99,20 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
     }
 
     /**
-     * Method: Returns what the player sees of one card.
-     * Calls: Card.isFaceUp(), Card.rank(), Rank.value(), Card.suit()
+     * Returns the card's rank value and suit if it is face up, or the hidden marker (0, {@code null}) if not.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link Card#isFaceUp} - decides whether to hide the card</li>
+     *   <li>{@link Card#rank()} - gets the rank of a face-up card</li>
+     *   <li>{@code Rank.value()} - stores the rank as a number</li>
+     *   <li>{@link Card#suit()} - gets the suit of a face-up card</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #from}.
+     *
+     * @param card the card to look at
+     * @return the card's rank value and suit if it is face up, or the hidden marker (0, {@code null}) if not
      */
     private static VisibleCard observe(Card card) {
         return card.isFaceUp() ? new VisibleCard(card.rank().value(), card.suit()) : new VisibleCard(0, null);

@@ -3,22 +3,30 @@ package solitaire.move;
 import solitaire.enums.MoveType;
 
 /**
- * One move: its type, zero-based source and destination indexes, and the number of cards moved.
- * Draw and recycle moves do not use the indexes.
+ * One move: its type, where it starts, where it ends, and how many cards it moves. Indexes start at 0: a column
+ * index is 0 to 6 (T1 to T7), and a foundation index is the suit's position in Suit (0 Hearts to 3 Spades). Draw and
+ * recycle moves ignore both indexes.
  *
- * <p>Type: record (an immutable data class; Java creates its fields, constructor, getters type(), source(),
- * destination(), count(), and equals/hashCode).
- * OOP: ENCAPSULATION (a move cannot be changed after it is created).
+ * <p>It is a record, so a move cannot change after it is created, and Java generates its constructor, getters,
+ * equals(), and hashCode(). That lets moves be stored in a Set.
  *
  * @param type        the kind of move
- * @param source      the source column or foundation index
- * @param destination the destination column or foundation index
- * @param count       the number of cards moved
+ * @param source      the column or foundation the cards leave
+ * @param destination the column or foundation the cards go to
+ * @param count       cards moved: 1 for single-card moves and recycle, 1 to 3 for a draw, 1 or more between columns
  * @author Farhiya Ayyub
  */
 public record Move(MoveType type, int source, int destination, int count) {
 
-    /** Method (override): Returns a short technical description, used in error messages. */
+    /**
+     * Returns a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
+     * cards=2", used in error messages. The screen uses ConsoleRenderer.describeMove(), which also names the card.
+     *
+     * <p>Called by: string concatenation in the error message of {@code SolitaireGame.apply()}.
+     *
+     * @return a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
+     *     cards=2", used in error messages
+     */
     @Override
     public String toString() {
         return type + " source=" + (source + 1) + " destination=" + (destination + 1) + " cards=" + count;

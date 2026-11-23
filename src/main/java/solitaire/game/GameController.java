@@ -15,26 +15,28 @@ import solitaire.solver.SolitaireSolver;
 import solitaire.solver.SolvableDealProvider;
 
 /**
- * Connects input, the game engine, the solver, and the display: it sets up each game, lets the solver play it,
- * replays the moves through the engine, and reports the result.
+ * Runs games from start to finish. It connects the input, the game engine, the solver, and the display: it sets up
+ * a deal, lets the solver or the player choose moves, applies them through SolitaireGame, and prints the result.
+ * It contains no game rules and no printing code of its own.
  *
- * <p>Type: final class; the controller.
- * OOP: ABSTRACTION (depends on the SolitaireSolver interface, not on VisibleSolver),
- * ENCAPSULATION (private fields), COMPOSITION (uses renderer, input, and solver objects).
+ * <p>Abstraction: it depends on the SolitaireSolver interface, not on VisibleSolver, so another solver can be used
+ * without changing this class. Composition: it is built from a renderer, an input reader, and a solver.
  *
  * @author Farhiya Ayyub
  */
 public final class GameController {
-    // Field and object: the ConsoleRenderer that prints everything.
     private final ConsoleRenderer renderer = new ConsoleRenderer();
-    // Field: the solver, typed as the interface so any solver implementation can be used.
+    // Typed as the SolitaireSolver interface, so any solver passed to the constructor can be used.
     private final SolitaireSolver solver;
-    // Field: reads what the player types.
     private final ConsoleInput consoleInput;
 
     /**
-     * Constructor: Uses the supplied solver (any {@link SolitaireSolver} implementation) and console input.
-     * Calls: Objects.requireNonNull()
+     * Stores the solver and input that this controller will use (dependency injection: they are created outside and
+     * passed in).
+     *
+     * @param solver the automatic player
+     * @param consoleInput reads the player's answers
+     * @throws NullPointerException if solver or consoleInput is {@code null}
      */
     public GameController(SolitaireSolver solver, ConsoleInput consoleInput) {
         this.solver = Objects.requireNonNull(solver);
@@ -42,37 +44,72 @@ public final class GameController {
     }
 
     /**
-     * Method: Runs the interactive menu until the player declines another game or cancels.
-     * Calls: ConsoleRenderer.heading(), playFromMenu(), ConsoleInput.playAgain(), ConsoleRenderer.goodbye()
+     * Shows the title, then repeats one menu round while the player answers yes to "play again". Prints the closing
+     * message only after a normal finish; returns at once, without it, if the player enters q.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ConsoleRenderer#heading} - prints the game title</li>
+     *   <li>{@code playFromMenu()} - runs one round of the menu</li>
+     *   <li>{@link ConsoleInput#playAgain} - asks whether to play another round</li>
+     *   <li>{@link ConsoleRenderer#showClosingMessage} - prints the thank-you message</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
      */
     public void shuffleAndPlay() {
-        renderer.heading("KLONDIKE SOLITAIRE");
+        renderer.heading("WELCOME TO KLONDIKE SOLITAIRE");
         do {
             if (!playFromMenu()) {
                 return;
             }
         } while (consoleInput.playAgain());
-        renderer.goodbye();
+        renderer.showClosingMessage();
     }
 
     /**
-     * Method: Plays a Draw 1 game from a standard deck; compact output shows only the final board.
-     * Calls: automatic(ShuffleConfiguration, Deck, int, boolean)
+     * Plays one automatic Draw 1 game from a new standard deck. With compact {@code true}, only the final board and
+     * result are printed; otherwise every move and board is printed.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link #automatic} - does the work with a new deck and Draw 1</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
+     *
+     * @param configuration the shuffle settings
+     * @param compact {@code true} to print only the final board and result
      */
     public void automatic(ShuffleConfiguration configuration, boolean compact) {
-        // Object: Deck - a new standard deck.
         automatic(configuration, new Deck(), GameState.DRAW_ONE, compact);
     }
 
     /**
-     * Method: Shuffles the deck, lets the solver play, and replays every move through the game engine.
-     * Calls: ConsoleRenderer.shuffleConfiguration(), ConsoleRenderer.playing(), ShuffleConfiguration.prepareDeck(),
-     * GameState.deal(), ConsoleRenderer.render(), solveAndReplay(), ConsoleRenderer.resultDetail()
+     * Plays one automatic game: shuffles a copy of the deck, deals it, lets the solver choose all moves, replays them
+     * through the game engine, then prints the final board and the result line.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ConsoleRenderer#shuffleConfiguration} - prints the chosen shuffle</li>
+     *   <li>{@link ConsoleRenderer#playing} - prints the draw mode</li>
+     *   <li>{@link ShuffleConfiguration#prepareDeck} - shuffles a copy of the deck</li>
+     *   <li>{@link GameState#deal} - lays the cards out on a new board</li>
+     *   <li>{@link ConsoleRenderer#render} - prints the board</li>
+     *   <li>{@code solveAndReplay()} - lets the solver play and applies its moves</li>
+     *   <li>{@link ConsoleRenderer#resultDetail} - prints the Result line</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #automatic}, {@code playFromMenu()}.
+     *
+     * @param configuration the shuffle settings
+     * @param initialDeck the deck to start from; it is not changed
+     * @param drawCount cards turned per draw: 1 or 3
+     * @param compact {@code true} to print only the final board and result
      */
     public void automatic(ShuffleConfiguration configuration, Deck initialDeck, int drawCount, boolean compact) {
         renderer.shuffleConfiguration(configuration);
         renderer.playing(drawCount);
-        // Object: SolitaireGame - the game engine for this deal.
         SolitaireGame game = new SolitaireGame(GameState.deal(configuration.prepareDeck(initialDeck), drawCount));
         if (!compact) {
             renderer.render(game);
@@ -83,14 +120,25 @@ public final class GameController {
     }
 
     /**
-     * Method: Replays the constructed practice deal's verified winning moves.
-     * Calls: SolvableDealProvider.create(), ConsoleRenderer.render(), replay(), SolitaireGame.finish(),
-     * ConsoleRenderer.resultDetail()
+     * Plays a demonstration deal that is known to be winnable, using its already-checked winning moves instead of the
+     * solver, so it always ends in a win.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link SolvableDealProvider#create} - gets a winnable deal and its moves</li>
+     *   <li>{@link SolvableDealProvider.VerifiedDeal#state()} - gets a copy of the winnable board</li>
+     *   <li>{@link ConsoleRenderer#render} - prints the board</li>
+     *   <li>{@code replay()} - plays the winning moves</li>
+     *   <li>{@link SolitaireGame#finish} - records the game as WON</li>
+     *   <li>{@link ConsoleRenderer#resultDetail} - prints the Result line</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
+     *
+     * @param compact {@code true} to print only the final board; {@code false} to print every move
      */
     public void guaranteed(boolean compact) {
-        // Object: SolvableDealProvider - builds a deal that is known to be winnable.
         SolvableDealProvider.VerifiedDeal deal = new SolvableDealProvider().create();
-        // Object: SolitaireGame - the game engine for the practice deal.
         SolitaireGame game = new SolitaireGame(deal.state());
         if (!compact) {
             renderer.render(game);
@@ -102,16 +150,36 @@ public final class GameController {
     }
 
     /**
-     * Method: Reports Draw 1 random-shuffle results for consecutive seeds.
-     * Calls: simulateBatch()
+     * Plays gameCount Draw 1 games with a random shuffle, using seeds firstSeed, firstSeed + 1, and so on, and prints
+     * one line per game plus a summary.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@code simulateBatch()} - runs the games with a random shuffle</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
+     *
+     * @param gameCount how many games to play
+     * @param firstSeed the seed of the first game; game n uses firstSeed + n
      */
     public void simulate(int gameCount, long firstSeed) {
         simulateBatch(gameCount, firstSeed, ShuffleType.RANDOM);
     }
 
     /**
-     * Method: Compares Random, In-Faro, and Out-Faro over the same starting seeds.
-     * Calls: simulateBatch() (once for each shuffle)
+     * Runs the same simulation three times, with Random, In-Faro, and Out-Faro shuffles, using the same seeds, so the
+     * three win rates can be compared fairly.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@code simulateBatch()} - runs one batch per shuffle type</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
+     *
+     * @param gameCount how many games to play
+     * @param firstSeed the seed of the first game; game n uses firstSeed + n
      */
     public void compare(int gameCount, long firstSeed) {
         simulateBatch(gameCount, firstSeed, ShuffleType.RANDOM);
@@ -120,20 +188,34 @@ public final class GameController {
     }
 
     /**
-     * Method: Lets the player choose moves on a seeded random deal until they win, get stuck, or cancel.
-     * Calls: ShuffleConfiguration.prepareDeck(), GameState.deal(), ConsoleRenderer.render(),
-     * MoveGenerator.generate(), ConsoleInput.selectMove(), SolitaireGame.play()
+     * Lets the player choose every move on a random deal made from the seed. Ends when the board is won, when no legal
+     * move is left, or when the player enters q.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ShuffleConfiguration#prepareDeck} - shuffles a deck from the seed</li>
+     *   <li>{@link GameState#deal} - lays the cards out on a new board</li>
+     *   <li>{@link SolitaireGame#state()} - gets the board for the move list</li>
+     *   <li>{@link GameState#won} - stops the loop when the game is won</li>
+     *   <li>{@link ConsoleRenderer#render} - prints the board before each choice</li>
+     *   <li>{@link MoveGenerator#generate} - lists the moves the player may choose</li>
+     *   <li>{@link ConsoleInput#selectMove} - asks the player to pick a move</li>
+     *   <li>{@link SolitaireGame#play} - plays the chosen move</li>
+     * </ul>
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}.
+     *
+     * @param seed the seed for the random deal
+     * @throws IllegalStateException if a chosen move is rejected by the engine
      */
     public void manual(long seed) {
-        // Object: ShuffleConfiguration - random shuffle with the given seed.
         Deck deck = new ShuffleConfiguration(ShuffleType.RANDOM, false, seed).prepareDeck();
-        // Object: SolitaireGame - the game engine for this deal.
         SolitaireGame game = new SolitaireGame(GameState.deal(deck));
-        // Object: MoveGenerator - lists the legal moves for the player.
         MoveGenerator generator = new MoveGenerator();
         while (!game.state().won()) {
             renderer.render(game);
-            Move selected = consoleInput.selectMove(generator.generate(game.state()), renderer);
+            GameState board = game.state();
+            Move selected = consoleInput.selectMove(generator.generate(board), board, renderer);
             if (selected == null) {
                 return;
             }
@@ -145,10 +227,26 @@ public final class GameController {
     }
 
     /**
-     * Method: Runs one round of the interactive menu; returns false if the player cancels.
-     * Calls: ConsoleInput.deckSource(), ConsoleInput.loadDeck(), ConsoleInput.shuffleConfiguration(),
-     * ConsoleInput.drawCount(), ConsoleInput.playMode(), ConsoleInput.gameCount(),
-     * ConsoleInput.wantsToWatchSimulationGame(), automatic(), simulate(), ConsoleRenderer.heading()
+     * Runs one round of the menu: deck source, shuffle, draw mode, then auto-play or simulation (a deck from a file
+     * always uses auto-play).
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ConsoleInput#deckSource} - asks: standard deck or card file</li>
+     *   <li>{@link ConsoleInput#loadDeck} - loads the card file</li>
+     *   <li>{@link ConsoleInput#shuffleConfiguration} - asks which shuffle to use</li>
+     *   <li>{@link ConsoleInput#drawCount} - asks Draw 1 or Draw 3</li>
+     *   <li>{@link #automatic} - plays one game move by move</li>
+     *   <li>{@link ConsoleInput#playMode} - asks: watch one game or test win rate</li>
+     *   <li>{@link ConsoleInput#gameCount} - asks how many games to simulate</li>
+     *   <li>{@code simulate()} - plays many games for the win rate</li>
+     *   <li>{@link ConsoleInput#wantsToWatchSimulationGame} - asks whether to watch game 1</li>
+     *   <li>{@link ConsoleRenderer#heading} - prints the title before game 1</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #shuffleAndPlay}.
+     *
+     * @return {@code false} as soon as the player enters q at any question, {@code true} otherwise
      */
     private boolean playFromMenu() {
         String deckSource = consoleInput.deckSource();
@@ -196,20 +294,59 @@ public final class GameController {
     }
 
     /**
-     * Method: Runs a Draw 1 batch for one shuffle type; Faro shuffles start from a randomized deck.
-     * Calls: ShuffleType.isFaro(), simulate(int, ShuffleConfiguration, int, boolean)
+     * Runs a compact Draw 1 simulation for one shuffle type. Faro shuffles randomize the deck first, because a perfect
+     * shuffle of the same sorted deck would give the same deal every game.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ShuffleType#isFaro} - randomizes first only for Faro shuffles</li>
+     *   <li>{@code simulate()} - plays the games</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #simulate(int, long)}, {@link #compare}.
+     *
+     * @param gameCount how many games to play
+     * @param firstSeed the seed of the first game; game n uses firstSeed + n
+     * @param type the shuffle to test
      */
     private void simulateBatch(int gameCount, long firstSeed, ShuffleType type) {
-        // Object: ShuffleConfiguration - the settings for this batch.
         simulate(gameCount, new ShuffleConfiguration(type, type.isFaro(), firstSeed), GameState.DRAW_ONE, true);
     }
 
     /**
-     * Method: Plays games with consecutive seeds and reports their outcomes.
-     * Calls: ConsoleRenderer.simulationStarted(), ConsoleRenderer.shuffleConfiguration(), ConsoleRenderer.playing(),
-     * ShuffleConfiguration.withSeedOffset(), ShuffleConfiguration.prepareDeck(), GameState.deal(),
-     * solveAndReplay(), ConsoleRenderer.simulationGame(), ConsoleRenderer.simulationSummary(),
-     * ConsoleRenderer.elapsed()
+     * Plays gameCount automatic games and prints the totals, win rate, and time taken. Prints a line per game only if
+     * showEachGame is {@code true}.
+     *
+     * <p>Algorithm: repeated trials.
+     * <ol>
+     *   <li>For game n = 0 to gameCount - 1: shuffle with seed + n, deal, and let the solver play.</li>
+     *   <li>Add 1 to won, limitedGames, or stuckGames according to the final status; add up moves and decisions.</li>
+     *   <li>Win rate = 100.0 * won / gameCount (calculated in ConsoleRenderer.simulationSummary()).</li>
+     * </ol>
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link ConsoleRenderer#simulationStarted} - prints the report title</li>
+     *   <li>{@link ConsoleRenderer#shuffleConfiguration} - prints the chosen shuffle</li>
+     *   <li>{@link ConsoleRenderer#playing} - prints the draw mode</li>
+     *   <li>{@link ShuffleConfiguration#withSeedOffset} - gives each game its own seed</li>
+     *   <li>{@link ShuffleConfiguration#prepareDeck} - shuffles the deck for one game</li>
+     *   <li>{@link GameState#deal} - lays the cards out on a new board</li>
+     *   <li>{@code solveAndReplay()} - lets the solver play one game</li>
+     *   <li>{@link SolitaireGame#status()} - counts the game as won, limited, or stuck</li>
+     *   <li>{@link SolitaireGame#moves()} - adds up the moves for the average</li>
+     *   <li>{@link ConsoleRenderer#simulationGame} - prints one line per game</li>
+     *   <li>{@link ConsoleRenderer#simulationSummary} - prints the totals and win rate</li>
+     *   <li>{@link ConsoleRenderer#elapsed} - prints how long it took</li>
+     * </ul>
+     *
+     * <p>Called by: {@code playFromMenu()}, {@code simulateBatch()}.
+     *
+     * @param gameCount how many games to play
+     * @param configuration the shuffle settings
+     * @param drawCount cards turned per draw: 1 or 3
+     * @param showEachGame {@code true} to print one line per game
+     * @throws IllegalArgumentException if gameCount is less than 1
      */
     private void simulate(int gameCount, ShuffleConfiguration configuration, int drawCount, boolean showEachGame) {
         if (gameCount < 1) {
@@ -226,7 +363,6 @@ public final class GameController {
         long totalDecisions = 0;
         for (int gameIndex = 0; gameIndex < gameCount; gameIndex++) {
             Deck deck = configuration.withSeedOffset(gameIndex).prepareDeck();
-            // Object: SolitaireGame - the game engine for one simulated deal.
             SolitaireGame game = new SolitaireGame(GameState.deal(deck, drawCount));
             SolitaireSolver.Result result = solveAndReplay(game, true);
             switch (game.status()) {
@@ -245,8 +381,22 @@ public final class GameController {
     }
 
     /**
-     * Method: Lets the solver play from the game's board, replays its moves on the game, and records the result.
-     * Calls: SolitaireSolver.solve() (runs VisibleSolver), SolitaireGame.state(), replay(), SolitaireGame.finish()
+     * Gives the solver a copy of the board, replays the moves it returns on the real game so each is checked again by
+     * play(), then records the solver's final status on the game and returns the solver's result.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link SolitaireGame#state()} - gives the solver a copy of the board</li>
+     *   <li>{@link SolitaireSolver#solve} - asks the solver for its moves</li>
+     *   <li>{@code replay()} - applies the moves to the real game</li>
+     *   <li>{@link SolitaireGame#finish} - records how the game ended</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #automatic}, {@code simulate()}.
+     *
+     * @param game the game to play; its board is given to the solver as a copy
+     * @param compact {@code true} to print only the final board; {@code false} to print every move
+     * @return the solver's result: final status, moves, and decision count
      */
     private SolitaireSolver.Result solveAndReplay(SolitaireGame game, boolean compact) {
         SolitaireSolver.Result result = solver.solve(game.state());
@@ -256,13 +406,27 @@ public final class GameController {
     }
 
     /**
-     * Method: Applies each move through the game engine, showing every step unless compact.
-     * Calls: ConsoleRenderer.nextMove(), SolitaireGame.play(), ConsoleRenderer.render()
+     * Plays each move through SolitaireGame.play(). Unless compact, prints each move and the board after it.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@link SolitaireGame#state()} - the board before the move, to name the card</li>
+     *   <li>{@link ConsoleRenderer#nextMove} - prints the move before it is played</li>
+     *   <li>{@link SolitaireGame#play} - checks and plays the move</li>
+     *   <li>{@link ConsoleRenderer#render} - prints the board after the move</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #guaranteed}, {@code solveAndReplay()}.
+     *
+     * @param game the game to play the moves on
+     * @param moves the moves to play, in order
+     * @param compact {@code true} to print only the final board; {@code false} to print every move
+     * @throws IllegalStateException if the engine rejects a move
      */
     private void replay(SolitaireGame game, List<Move> moves, boolean compact) {
         for (Move move : moves) {
             if (!compact) {
-                renderer.nextMove(move);
+                renderer.nextMove(move, game.state());
             }
             if (!game.play(move)) {
                 throw new IllegalStateException("Invalid solution path");

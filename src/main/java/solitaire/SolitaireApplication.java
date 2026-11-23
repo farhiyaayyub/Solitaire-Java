@@ -6,6 +6,7 @@ import java.util.Scanner;
 
 import solitaire.game.GameController;
 import solitaire.io.CardFileLoader;
+import solitaire.io.ConsoleColor;
 import solitaire.io.ConsoleInput;
 import solitaire.shuffle.ShuffleConfiguration;
 import solitaire.shuffle.ShuffleType;
@@ -13,14 +14,16 @@ import solitaire.solver.SolitaireSolver;
 import solitaire.solver.VisibleSolver;
 
 /**
- * Reads the command-line arguments, runs the matching command, and turns failures into exit codes.
+ * Reads the command-line arguments, creates the main objects, runs the requested command, and converts each kind of
+ * failure into an exit code. With no arguments it runs the interactive menu ("shuffle").
  *
- * <p>Type: final utility class with only static methods; it creates the main objects and connects them.
+ * <p>All methods are static, because the class only connects the other objects and has no state of its own.
  *
  * @author Farhiya Ayyub
  */
 public final class SolitaireApplication {
-    // Constants: default solver limits and settings, and the exit codes.
+    // Constants: solver limits used when the command line does not give them (15,000 decisions, 3,000 moves,
+    // 10 seconds per game), the default game count and seed, and the three exit codes.
     private static final int DEFAULT_MAX_DECISIONS = 15_000;
     private static final int DEFAULT_MAX_MOVES = 3_000;
     private static final long DEFAULT_MAX_MILLIS = 10_000;
@@ -30,28 +33,48 @@ public final class SolitaireApplication {
     private static final int EXIT_FAILURE = 1;
     private static final int EXIT_INVALID_INPUT = 2;
 
-    /** Constructor (private): Prevents creating an object of this command-line utility. */
+    /** Prevents objects of this class; all its methods are static. */
     private SolitaireApplication() {
     }
 
     /**
-     * Method (static): Runs a command; returns 0 on success, 2 for invalid input, or 1 for a file or game error.
-     * Calls: validateArguments(), intArgument(), longArgument(), CardFileLoader.load(),
-     * GameController.shuffleAndPlay(), GameController.guaranteed(), GameController.automatic(),
-     * GameController.simulate(), GameController.compare(), GameController.manual(), hasCompactOption(), printUsage()
+     * Validates the arguments, builds the controller, and runs one command. Errors are caught here and printed in red.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@code validateArguments()} - rejects bad commands before any work starts</li>
+     *   <li>{@code intArgument()} - reads a whole-number argument or its default</li>
+     *   <li>{@code longArgument()} - reads a seed or time argument or its default</li>
+     *   <li>{@link CardFileLoader#load} - checks the card file for the validate command</li>
+     *   <li>{@link GameController#shuffleAndPlay} - runs the interactive menu</li>
+     *   <li>{@code hasCompactOption()} - checks whether only the final board is wanted</li>
+     *   <li>{@link GameController#guaranteed} - plays the known-winnable deal</li>
+     *   <li>{@link GameController#automatic} - plays one automatic game</li>
+     *   <li>{@link GameController#simulate(int, long)} - plays many games and prints a summary</li>
+     *   <li>{@link GameController#compare} - compares the three shuffle types</li>
+     *   <li>{@link GameController#manual} - lets the player choose every move</li>
+     *   <li>{@code printUsage()} - shows the list of commands</li>
+     *   <li>{@link ConsoleColor#paint} - prints each error message in red</li>
+     * </ul>
+     *
+     * <p>Called by: {@link Main#main}.
+     *
+     * @param args the command-line arguments; the first one is the command
+     * @return 0 on success, 1 for a file or game error, or 2 for invalid input (including a number that cannot be
+     *     parsed)
      */
     public static int run(String[] args) {
-        // Object: Scanner - reads the keyboard; closed automatically at the end of this block.
+        // try-with-resources closes the keyboard Scanner when the command finishes or fails.
         try (Scanner input = new Scanner(System.in)) {
             String command = args.length == 0 ? "shuffle" : args[0];
             validateArguments(command, args);
-            // Object: Limits - the solver's decision, move, and time limits.
+            // Arguments 4 to 6 (indexes 3 to 5) override the default solver limits.
             SolitaireSolver.Limits limits = new SolitaireSolver.Limits(
                     intArgument(args, 3, DEFAULT_MAX_DECISIONS),
                     intArgument(args, 4, DEFAULT_MAX_MOVES),
                     longArgument(args, 5, DEFAULT_MAX_MILLIS));
-            // Objects: GameController, with a VisibleSolver (used through the SolitaireSolver interface)
-            // and a ConsoleInput.
+            // The solver is passed in through the SolitaireSolver interface, so GameController does not depend on
+            // VisibleSolver directly.
             GameController controller = new GameController(new VisibleSolver(limits), new ConsoleInput(input));
             switch (command) {
                 case "validate" -> {
@@ -72,23 +95,32 @@ public final class SolitaireApplication {
                 default -> throw new IllegalArgumentException("Unknown command: " + command);
             }
             return EXIT_SUCCESS;
-        // Each kind of error gets its own message and exit code.
         } catch (IOException exception) {
-            System.err.println("File error: " + exception.getMessage());
+            System.err.println(ConsoleColor.RED.paint("File error: " + exception.getMessage()));
             return EXIT_FAILURE;
         } catch (IllegalArgumentException exception) {
-            System.err.println("Invalid input: " + exception.getMessage());
+            System.err.println(ConsoleColor.RED.paint("Invalid input: " + exception.getMessage()));
+            // The usage text is not relevant to a card-file problem, so validate skips it.
             if (args.length == 0 || !args[0].equals("validate")) {
                 printUsage();
             }
             return EXIT_INVALID_INPUT;
         } catch (IllegalStateException exception) {
-            System.err.println("Game error: " + exception.getMessage());
+            System.err.println(ConsoleColor.RED.paint("Game error: " + exception.getMessage()));
             return EXIT_FAILURE;
         }
     }
 
-    /** Method: Checks the argument count and the output option for the command. */
+    /**
+     * Checks the command and its arguments before any work starts.
+     *
+     * <p>Called by: {@link #run}.
+     *
+     * @param command the command name, such as "random"
+     * @param args all command-line arguments, including the command
+     * @throws IllegalArgumentException for an unknown command, too many arguments, a validate command without exactly
+     *     one file, or an output option other than --compact or --verbose
+     */
     private static void validateArguments(String command, String[] args) {
         if (command.equals("validate") && args.length != 2) {
             throw new IllegalArgumentException("Usage: validate <card-file>");
@@ -102,6 +134,7 @@ public final class SolitaireApplication {
         if (args.length > maximumArguments) {
             throw new IllegalArgumentException("Too many arguments for " + command);
         }
+        // Position of the output option for the commands that accept one; -1 means the command has none.
         int outputOptionIndex = switch (command) {
             case "guaranteed" -> 1;
             case "random" -> 2;
@@ -113,37 +146,64 @@ public final class SolitaireApplication {
         }
     }
 
-    /** Method: Reports whether the argument at the index is --compact. */
+    /**
+     * Returns {@code true} only if the argument at the index exists and is exactly --compact.
+     *
+     * <p>Called by: {@link #run}.
+     *
+     * @param args the command-line arguments; the first one is the command
+     * @param index the position of the output option
+     * @return {@code true} only if the argument at the index exists and is exactly --compact
+     */
     private static boolean hasCompactOption(String[] args, int index) {
         return args.length > index && args[index].equals("--compact");
     }
 
     /**
-     * Method: Parses an int argument, or returns the default when it is absent.
-     * Calls: Integer.parseInt()
+     * Returns the argument at the index as an int, or the default when the argument is missing.
+     *
+     * <p>Called by: {@link #run}.
+     *
+     * @param args the command-line arguments; the first one is the command
+     * @param index the position of the argument
+     * @param defaultValue the value to use when the argument is missing
+     * @return the argument at the index as an int, or the default when the argument is missing
+     * @throws NumberFormatException if the argument is not a whole number
      */
     private static int intArgument(String[] args, int index, int defaultValue) {
         return args.length > index ? Integer.parseInt(args[index]) : defaultValue;
     }
 
     /**
-     * Method: Parses a long argument, or returns the default when it is absent.
-     * Calls: Long.parseLong()
+     * Returns the argument at the index as a long, or the default when the argument is missing.
+     *
+     * <p>Called by: {@link #run}.
+     *
+     * @param args the command-line arguments; the first one is the command
+     * @param index the position of the argument
+     * @param defaultValue the value to use when the argument is missing
+     * @return the argument at the index as a long, or the default when the argument is missing
+     * @throws NumberFormatException if the argument is not a whole number
      */
     private static long longArgument(String[] args, int index, long defaultValue) {
         return args.length > index ? Long.parseLong(args[index]) : defaultValue;
     }
 
-    /** Method: Prints the supported commands and their argument formats. */
+    /**
+     * Prints every command with its optional arguments in brackets.
+     *
+     * <p>Called by: {@link #run}.
+     */
     private static void printUsage() {
-        System.out.println("Commands:\n"
-                + "  shuffle | menu        Interactive setup (standard deck or card file).\n"
-                + "  validate <card-file>  Check a deck file without starting a game.\n"
-                + "  guaranteed [--compact|--verbose]\n"
-                + "  random [seed [--compact|--verbose [decisions [moves [ms]]]]]\n"
-                + "  simulate [count [firstSeed [decisions [moves [ms]]]]]\n"
-                + "  compare [count [firstSeed [decisions [moves [ms]]]]]\n"
-                + "  manual\n"
-                + "  help");
+        System.out.println("""
+                Commands:
+                  shuffle | menu        Interactive setup (standard deck or card file).
+                  validate <card-file>  Check a deck file without starting a game.
+                  guaranteed [--compact|--verbose]
+                  random [seed [--compact|--verbose [decisions [moves [ms]]]]]
+                  simulate [count [firstSeed [decisions [moves [ms]]]]]
+                  compare [count [firstSeed [decisions [moves [ms]]]]]
+                  manual
+                  help""");
     }
 }

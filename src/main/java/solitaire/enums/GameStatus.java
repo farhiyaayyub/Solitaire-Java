@@ -1,19 +1,22 @@
 package solitaire.enums;
 
 /**
- * The possible states of a game.
+ * The four possible states of a game. A game starts RUNNING and ends in exactly one of the other three.
  *
- * <p>Type: enum; a fixed set of constants, safer than plain strings or numbers for the game state.
+ * <p>An enum is used so that only these four values are possible, unlike a String or int status.
  *
  * @author Farhiya Ayyub
  */
 public enum GameStatus {
-    /** Constant: The game is still being played. */
+    /** The game has not ended yet. */
     RUNNING,
-    /** Constant: All 52 cards reached the foundations. */
+    /** All 52 cards are on the foundations. */
     WON,
-    /** Constant: The solver has no untried move in the current position (not proof it is unsolvable). */
+    /**
+     * The solver has tried every legal move in the current visible position. This does not prove the deal is
+     * unwinnable.
+     */
     STUCK,
-    /** Constant: The decision, move, or time limit ended play. */
+    /** The solver reached its decision, move, or time limit before winning or getting stuck. */
     LIMIT_REACHED
 }
