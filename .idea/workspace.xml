@@ -4,39 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e45a7543-b8d4-4d3a-b3ef-0247e6b02c35" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="e45a7543-b8d4-4d3a-b3ef-0247e6b02c35" name="Changes" comment="Fixed ShuffleStrategy">
+      <change afterPath="$PROJECT_DIR$/.idea/claudeCodeEditorTabs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/FaroShuffle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/InFaroShuffle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/NoShuffle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/OutFaroShuffle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/RandomShuffle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleStrategy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/resources/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/SolitaireApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/SolitaireApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/ConsoleColor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleColor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/GameStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/GameStatus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/MoveType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/MoveType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/Rank.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/Rank.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/ShuffleType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/enums/Suit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/enums/Suit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/GameController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/GameController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/GameState.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/GameState.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/game/SolitaireGame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/game/SolitaireGame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/CardFileLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/CardFileLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleInput.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleInput.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/io/ConsoleRenderer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/model/Card.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/model/Card.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/model/Deck.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/model/Deck.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/Move.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/Move.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveGenerator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/move/MoveValidator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/FoundationPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/FoundationPile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/StockPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/StockPile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/TableauPile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/TableauPile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/pile/WastePile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/pile/WastePile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/shuffle/ShuffleConfiguration.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/ObservableBoard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/ObservableBoard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolitaireSolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolitaireSolver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolvableDealProvider.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/SolvableDealProvider.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/solitaire/solver/VisibleSolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/solitaire/solver/VisibleSolver.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,67 +26,79 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;farhiyaayyub&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/farhiyaayyub/Solitaire-Java&quot;,
+    &quot;accountId&quot;: &quot;dcebffb5-7f3d-4d69-922b-2a3a4924d4fd&quot;
+  }
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.386631907694884" />
-      <entry key="MS500" value="3.3952966592977996" />
-      <entry key="S2" value="6.7327439587194045" />
-      <entry key="S5" value="8.42176699411731" />
-      <entry key="S10" value="9.155328768148888" />
-      <entry key="S30" value="9.704928477569156" />
-      <entry key="S60" value="9.850732279037437" />
-      <entry key="M2" value="9.974552103705877" />
-      <entry key="M5" value="15.560867131077027" />
-      <entry key="M10" value="43.78598349657446" />
-      <entry key="M15" value="75.2035117491172" />
-      <entry key="M30" value="149.9028890014295" />
-      <entry key="H1" value="312.4429927939182" />
-      <entry key="H2" value="738.5285921490198" />
-      <entry key="H4" value="1560.5017311032882" />
-      <entry key="D1" value="4322.422904439118" />
-      <entry key="W1" value="5493.130134486065" />
+      <entry key="MS100" value="1.016240210079659" />
+      <entry key="MS500" value="2.177429061300115" />
+      <entry key="S2" value="6.250285463062429" />
+      <entry key="S5" value="9.371946340797368" />
+      <entry key="S10" value="10.97336517753006" />
+      <entry key="S30" value="13.249077980569973" />
+      <entry key="S60" value="19.539544784183903" />
+      <entry key="M2" value="33.27011859432347" />
+      <entry key="M5" value="57.541516473875724" />
+      <entry key="M10" value="89.59432198823237" />
+      <entry key="M15" value="121.57787074960535" />
+      <entry key="M30" value="199.4457845037632" />
+      <entry key="H1" value="362.7512310407447" />
+      <entry key="H2" value="785.5760688469913" />
+      <entry key="H4" value="1606.4198741238688" />
+      <entry key="D1" value="4384.085964511273" />
+      <entry key="W1" value="5565.709827187409" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="0.0" />
-      <entry key="S2" value="0.0" />
-      <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="0.0" />
-      <entry key="S60" value="4.898071177846776E-201" />
-      <entry key="M2" value="6.998622134282093E-101" />
-      <entry key="M5" value="8.669718937827137E-41" />
-      <entry key="M10" value="9.311132550784288E-21" />
-      <entry key="M15" value="4.4259007710662134E-14" />
-      <entry key="M30" value="2.103782491386916E-7" />
-      <entry key="H1" value="4.5867008746886255E-4" />
-      <entry key="H2" value="0.02141658440248724" />
-      <entry key="H4" value="0.14634406172608005" />
-      <entry key="D1" value="0.7259318490339449" />
-      <entry key="W1" value="0.9552740464245555" />
+      <entry key="MS500" value="6.755717355141371E-221" />
+      <entry key="S2" value="9.066044946740138E-56" />
+      <entry key="S5" value="9.615395385087262E-23" />
+      <entry key="S10" value="9.805812248400051E-12" />
+      <entry key="S30" value="2.1403979409908338E-4" />
+      <entry key="S60" value="0.014630098909408787" />
+      <entry key="M2" value="0.12095494578316639" />
+      <entry key="M5" value="0.42958534020938344" />
+      <entry key="M10" value="0.6554276010433067" />
+      <entry key="M15" value="0.7545415342739903" />
+      <entry key="M30" value="0.868643684001259" />
+      <entry key="H1" value="0.9324366013462634" />
+      <entry key="H2" value="0.9860500178225737" />
+      <entry key="H4" value="1.1262283812345995" />
+      <entry key="D1" value="1.7207805846504625" />
+      <entry key="W1" value="1.9544368024062804" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.2625833350451021" />
-      <entry key="MS500" value="3.258885132314195" />
-      <entry key="S2" value="6.667477423791036" />
-      <entry key="S5" value="8.390895984727491" />
-      <entry key="S10" value="9.138930672175976" />
-      <entry key="S30" value="9.699229127132309" />
-      <entry key="S60" value="9.84785209099796" />
-      <entry key="M2" value="9.973092109106922" />
-      <entry key="M5" value="15.55987539179639" />
-      <entry key="M10" value="43.78461156589223" />
-      <entry key="M15" value="75.20198424388396" />
-      <entry key="M30" value="149.90147961842754" />
-      <entry key="H1" value="312.4423561010604" />
-      <entry key="H2" value="738.5491378240007" />
-      <entry key="H4" value="1560.6473455625762" />
-      <entry key="D1" value="4323.148520894483" />
-      <entry key="W1" value="5494.085350106264" />
+      <entry key="MS100" value="0.9166121441474394" />
+      <entry key="MS500" value="2.1418344756971384" />
+      <entry key="S2" value="6.226089209239279" />
+      <entry key="S5" value="9.357455380320257" />
+      <entry key="S10" value="10.964881948103235" />
+      <entry key="S30" value="13.245780477057936" />
+      <entry key="S60" value="19.55027887168109" />
+      <entry key="M2" value="33.383744364022135" />
+      <entry key="M5" value="57.96223421977279" />
+      <entry key="M10" value="90.24263149676172" />
+      <entry key="M15" value="122.32653220562729" />
+      <entry key="M30" value="200.3105044207307" />
+      <entry key="H1" value="363.6812032371231" />
+      <entry key="H2" value="786.5605314911652" />
+      <entry key="H4" value="1607.5450059396612" />
+      <entry key="D1" value="4385.806366401891" />
+      <entry key="W1" value="5567.664196386404" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -121,34 +110,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.Main.executor": "Run",
-    "Application.Solitaire.executor": "Run",
-    "Maven.klondike-solitaire [clean].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "PowerShell.demo-validation.ps1.executor": "Run",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/fhar0/Solitaire-Java",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.jshint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.jshint": "",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "editor.preferences.tabs",
-    "to.speed.mode.migration.done": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Solitaire.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.klondike-solitaire [clean].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;PowerShell.demo-validation.ps1.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/farhiya.ayyub/Solitaire-Java&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.github.yhk1038.claudecodegui.settings&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Application.Solitaire">
     <configuration name="demo-validation.ps1" type="PowerShellRunType" factoryName="PowerShell" temporary="true" scriptUrl="$PROJECT_DIR$/demo-validation.ps1" executablePath="$PROJECT_DIR$/../../../../WINDOWS/System32/WindowsPowerShell/v1.0/powershell.exe">
       <envs />
@@ -158,8 +151,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2df11533d9fe-intellij.indexing.shared.core-IU-262.11879.100" />
-        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.11879.100" />
+        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10968.63" />
       </set>
     </attachedChunks>
   </component>
@@ -175,6 +168,14 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Fixed ShuffleStrategy" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed ShuffleStrategy" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Solitaire_Java$Main.ic" NAME="Main Coverage Results" MODIFIED="1794452849883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />

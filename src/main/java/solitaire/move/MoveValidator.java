@@ -1,6 +1,5 @@
 package solitaire.move;
 
-import solitaire.enums.MoveType;
 import solitaire.enums.Suit;
 import solitaire.game.GameState;
 import solitaire.pile.CardPile;
@@ -71,7 +70,7 @@ public final class MoveValidator {
         // Java runs the accepts() of the real object.
         CardPile source = board.sourcePile(move);
         CardPile destination = board.destinationPile(move);
-        return destination.accepts(source.top());
+        return !source.isEmpty() && destination.accepts(source.top());
     }
 
     /**
