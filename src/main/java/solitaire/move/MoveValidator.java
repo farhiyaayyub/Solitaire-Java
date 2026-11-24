@@ -21,6 +21,10 @@ public final class MoveValidator {
      * {@code null} type, or a count below 1. A recycle is legal only with count 1, an empty stock, and a waste that is
      * not empty.
      *
+     * <p>Key idea: one {@code switch} on the move type sends each move to the check for its kind. All move rules live
+     * in this class, and it only reads the board, so the generator, the engine, and the solver all use exactly the same
+     * rules.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@code isLegalDraw()} - checks a draw</li>
@@ -54,20 +58,11 @@ public final class MoveValidator {
      * Returns {@code true} if the stock is not empty and count equals the draw mode (1 or 3), or the number of stock
      * cards left when fewer remain.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link GameState#stock()} - gets the stock</li>
-     *   <li>{@link CardPile#isEmpty} - cannot draw from an empty stock</li>
-     *   <li>{@link GameState#drawCount()} - gets the draw mode, 1 or 3</li>
-     *   <li>{@link CardPile#size} - allows fewer cards when few are left</li>
-     * </ul>
-     *
      * <p>Called by: {@link #isLegal}.
      *
      * @param board the board to read
      * @param move the draw move to check
-     * @return {@code true} if the stock is not empty and count equals the draw mode (1 or 3), or the number of stock
-     *     cards left when fewer remain
+     * @return {@code true} if the draw is legal
      */
     private boolean isLegalDraw(GameState board, Move move) {
         return !board.stock().isEmpty() && move.count() == Math.min(board.drawCount(), board.stock().size());
@@ -90,8 +85,7 @@ public final class MoveValidator {
      *
      * @param board the board to read
      * @param move the column-to-column move to check
-     * @return {@code true} if both column indexes are valid and different, the top count cards of the source form a
-     *     valid sequence, and the destination column accepts the lowest card of that sequence
+     * @return {@code true} if the column move is legal
      */
     private boolean isLegalTableauTransfer(GameState board, Move move) {
         if (!isValidColumnIndex(move.source()) || !isValidColumnIndex(move.destination())
@@ -108,6 +102,10 @@ public final class MoveValidator {
      * Returns {@code true} if count is 1, the indexes are valid, the source pile is not empty, and the destination pile
      * accepts the source's top card. The destination's own accepts() rule makes the decision.
      *
+     * <p>Key idea: {@code count != 1} is rejected, so foundation and waste moves are always one card at a time. The
+     * decision uses polymorphism: {@code destination} is typed as CardPile, but Java runs the accepts() of the real
+     * pile (tableau, foundation, or waste), so one line checks four move types.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@code hasValidIndexes()} - rejects indexes out of range</li>
@@ -122,8 +120,7 @@ public final class MoveValidator {
      *
      * @param board the board to read
      * @param move the one-card move to check
-     * @return {@code true} if count is 1, the indexes are valid, the source pile is not empty, and the destination pile
-     *     accepts the source's top card
+     * @return {@code true} if the one-card move is legal
      */
     private boolean isLegalSingleCardMove(GameState board, Move move) {
         if (move.count() != 1 || !hasValidIndexes(move)) {

@@ -14,11 +14,6 @@ public final class Main {
     /**
      * Runs the application, then exits with 0 (success), 1 (file or game error), or 2 (invalid input).
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link SolitaireApplication#run} - runs the command and returns the exit code</li>
-     * </ul>
-     *
      * <p>Called by: the Java runtime, when the program starts.
      *
      * @param args the command-line arguments; the first one is the command

@@ -47,14 +47,9 @@ public final class SolvableDealProvider {
          * Returns a copy of the stored board, so callers cannot change it. Replaces the getter that Java generates for
          * the record.
          *
-         * <p>Calls:
-         * <ul>
-         *   <li>{@link GameState#copy} - gives out a copy, not the stored board</li>
-         * </ul>
-         *
          * <p>Called by: {@code GameController.guaranteed()}.
          *
-         * @return a copy of the stored board, so callers cannot change it
+         * @return a copy of the stored board
          */
         @Override
         public GameState state() {
@@ -124,8 +119,7 @@ public final class SolvableDealProvider {
      *
      * <p>Called by: {@link #create}.
      *
-     * @return a draw order that deals the low cards to the columns with the lowest card of each column on top, and
-     *     leaves the higher ranks in the stock in ascending order, so cards can go straight to the foundations
+     * @return the 52 cards in the order to deal them
      */
     private static List<Card> ascendingDrawOrder() {
         List<Card> cardsByAscendingRank = new ArrayList<>();

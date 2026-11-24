@@ -61,7 +61,7 @@ public final class Card {
      * {@code TableauPile.accepts()}, {@code TableauPile.isValidSequence()}, {@code TableauPile.isOrderedSequence()},
      * {@code ObservableBoard.observe()}.
      *
-     * @return {@code true} if the card is face up (visible to the player)
+     * @return {@code true} if face up
      */
     public boolean isFaceUp() {
         return faceUp;
@@ -69,11 +69,6 @@ public final class Card {
 
     /**
      * Returns {@code true} for Hearts and Diamonds; the color comes from the suit.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Suit#isRed} - the color belongs to the suit</li>
-     * </ul>
      *
      * <p>Called by: {@code ConsoleRenderer.showCard()}, {@code TableauPile.fitsBelow()}.
      *
@@ -105,14 +100,9 @@ public final class Card {
      * Returns a number from 0 to 51 that identifies the card: 13 x suit position + (rank value - 1). For example, the
      * Ace of Hearts is 0 and the King of Spades is 51.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Rank#value()} - gives the rank position 1 to 13</li>
-     * </ul>
-     *
      * <p>Called by: {@link #hashCode}.
      *
-     * @return a number from 0 to 51 that identifies the card: 13 x suit position + (rank value - 1)
+     * @return a number from 0 to 51
      */
     public int id() {
         return suit.ordinal() * Rank.values().length + (rank.value() - 1);
@@ -120,12 +110,6 @@ public final class Card {
 
     /**
      * Returns the code used in card files, such as H-A or S-10. Face-down cards return their real code too.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Suit#code()} - gives the suit letter</li>
-     *   <li>{@link Rank#symbol()} - gives the rank symbol</li>
-     * </ul>
      *
      * <p>Called by: {@link #toString}, {@link Deck#Deck}.
      *
@@ -142,7 +126,7 @@ public final class Card {
      * <p>Called by: {@link Deck#Deck}, {@link Deck#drawOrder}, {@code CardPile.cards()},
      * {@code CardPile.copyCardsInto()}, {@code TableauPile.sequenceStart()}.
      *
-     * @return a new Card with the same suit, rank, and face-up flag
+     * @return an independent copy of this card
      */
     public Card copy() {
         Card cardCopy = new Card(suit, rank);
@@ -154,15 +138,11 @@ public final class Card {
      * Returns the board text: the code in brackets, such as [H-A], when face up, or [XX] when face down, so printing a
      * card can never reveal a hidden card.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #code} - gives the text inside the brackets</li>
-     * </ul>
+     * <p>Overrides {@code Object.toString()}.
      *
      * <p>Called by: {@code ConsoleRenderer.describeMove()}, {@code ConsoleRenderer.showCard()}.
      *
-     * @return the board text: the code in brackets, such as [H-A], when face up, or [XX] when face down, so printing a
-     *     card can never reveal a hidden card
+     * @return "[H-A]" when face up, "[XX]" when face down
      */
     @Override
     public String toString() {
@@ -172,6 +152,8 @@ public final class Card {
     /**
      * Returns {@code true} if the other object is a Card with the same suit and rank. The face-up flag is ignored, so a
      * card equals its own copy whether it is face up or face down.
+     *
+     * <p>Overrides {@code Object.equals()}.
      *
      * <p>Called by: Java's HashSet and HashMap, for example when Deck and CardFileLoader check for duplicate cards.
      *
@@ -186,10 +168,7 @@ public final class Card {
     /**
      * Returns id(), so equal cards have equal hashes. This lets HashSet find duplicate cards.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #id} - gives a unique number per card</li>
-     * </ul>
+     * <p>Overrides {@code Object.hashCode()}; it must agree with equals().
      *
      * <p>Called by: Java's HashSet and HashMap, together with equals().
      *

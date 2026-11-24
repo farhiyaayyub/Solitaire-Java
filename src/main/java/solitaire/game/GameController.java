@@ -71,11 +71,6 @@ public final class GameController {
      * Plays one automatic Draw 1 game from a new standard deck. With compact {@code true}, only the final board and
      * result are printed; otherwise every move and board is printed.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #automatic} - does the work with a new deck and Draw 1</li>
-     * </ul>
-     *
      * <p>Called by: {@code SolitaireApplication.run()}.
      *
      * @param configuration the shuffle settings
@@ -152,11 +147,6 @@ public final class GameController {
     /**
      * Plays gameCount Draw 1 games with a random shuffle, using seeds firstSeed, firstSeed + 1, and so on, and prints
      * one line per game plus a summary.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code simulateBatch()} - runs the games with a random shuffle</li>
-     * </ul>
      *
      * <p>Called by: {@code SolitaireApplication.run()}.
      *
@@ -297,12 +287,6 @@ public final class GameController {
      * Runs a compact Draw 1 simulation for one shuffle type. Faro shuffles randomize the deck first, because a perfect
      * shuffle of the same sorted deck would give the same deal every game.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link ShuffleType#isFaro} - randomizes first only for Faro shuffles</li>
-     *   <li>{@code simulate()} - plays the games</li>
-     * </ul>
-     *
      * <p>Called by: {@link #simulate(int, long)}, {@link #compare}.
      *
      * @param gameCount how many games to play
@@ -320,7 +304,7 @@ public final class GameController {
      * <p>Algorithm: repeated trials.
      * <ol>
      *   <li>For game n = 0 to gameCount - 1: shuffle with seed + n, deal, and let the solver play.</li>
-     *   <li>Add 1 to won, limitedGames, or stuckGames according to the final status; add up moves and decisions.</li>
+     *   <li>Add 1 to won, limitedGames, or stuckGames according to the final status; add up the moves.</li>
      *   <li>Win rate = 100.0 * won / gameCount (calculated in ConsoleRenderer.simulationSummary()).</li>
      * </ol>
      *
@@ -360,7 +344,6 @@ public final class GameController {
         int limitedGames = 0;
         int stuckGames = 0;
         long totalMoves = 0;
-        long totalDecisions = 0;
         for (int gameIndex = 0; gameIndex < gameCount; gameIndex++) {
             Deck deck = configuration.withSeedOffset(gameIndex).prepareDeck();
             SolitaireGame game = new SolitaireGame(GameState.deal(deck, drawCount));
@@ -371,12 +354,11 @@ public final class GameController {
                 default -> stuckGames++;
             }
             totalMoves += game.moves();
-            totalDecisions += result.decisions();
             if (showEachGame) {
                 renderer.simulationGame(gameIndex + 1, game.status(), game.moves());
             }
         }
-        renderer.simulationSummary(gameCount, won, limitedGames, stuckGames, totalMoves, totalDecisions);
+        renderer.simulationSummary(gameCount, won, limitedGames, stuckGames, totalMoves);
         renderer.elapsed(System.nanoTime() - started);
     }
 
@@ -396,7 +378,7 @@ public final class GameController {
      *
      * @param game the game to play; its board is given to the solver as a copy
      * @param compact {@code true} to print only the final board; {@code false} to print every move
-     * @return the solver's result: final status, moves, and decision count
+     * @return the solver's result: final status and moves
      */
     private SolitaireSolver.Result solveAndReplay(SolitaireGame game, boolean compact) {
         SolitaireSolver.Result result = solver.solve(game.state());

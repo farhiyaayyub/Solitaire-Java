@@ -59,6 +59,9 @@ public final class MoveGenerator {
      * from 1 to the column size; a draw uses the draw mode, or fewer cards if the stock has fewer; every other type
      * moves exactly 1 card.
      *
+     * <p>Key idea: only column-to-column moves try more than one card ({@code maximumCount} is the column size); every
+     * other type uses a count of 1. That is why a move of several cards to a foundation is never generated.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@link GameState#tableau()} - gets the source column</li>
@@ -94,7 +97,7 @@ public final class MoveGenerator {
      * <p>Called by: {@link #generate}.
      *
      * @param type the move type
-     * @return the number of source indexes to try: 7 columns, 4 foundations, or 1 for the stock or waste
+     * @return 7, 4, or 1
      */
     private static int sourceCount(MoveType type) {
         return switch (type) {
@@ -110,7 +113,7 @@ public final class MoveGenerator {
      * <p>Called by: {@link #generate}.
      *
      * @param type the move type
-     * @return the number of destination indexes to try: 7 columns, 4 foundations, or 1 otherwise
+     * @return 7, 4, or 1
      */
     private static int destinationCount(MoveType type) {
         return switch (type) {

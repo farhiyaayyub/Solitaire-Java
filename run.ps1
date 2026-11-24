@@ -21,5 +21,8 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-& $runtime -cp $outputDirectory solitaire.Main @args
+# src/main/resources holds default.properties, which the program reads from its classpath.
+$resourceDirectory = Join-Path $PSScriptRoot 'src/main/resources'
+$classPath = $outputDirectory + [IO.Path]::PathSeparator + $resourceDirectory
+& $runtime -cp $classPath solitaire.Main @args
 exit $LASTEXITCODE

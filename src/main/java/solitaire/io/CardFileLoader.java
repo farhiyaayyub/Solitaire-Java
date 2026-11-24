@@ -14,17 +14,33 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 /**
  * Reads a deck from a text file of suit-rank codes such as H-A or S-10, separated by spaces or new lines. Every
  * problem is reported with its line number, so the player can fix the file.
  *
- * <p>Abstraction: callers only call load(path) and get a Deck; the parsing helpers are private.
+ * <p>Abstraction: callers only call load(path) and get a Deck; the parsing helpers are private. The folder searched
+ * for bare file names is passed in (cardFiles.folder in solitaire.properties), so it is not fixed in the code.
  *
  * @author Farhiya Ayyub
  */
 public final class CardFileLoader {
+    private final Path cardFilesFolder;
+
+    /**
+     * Creates a loader that looks for bare file names, such as input.txt, in the given folder.
+     *
+     * <p>Called by: {@code SolitaireApplication.run()}, {@code SolitaireApplication.getController()}.
+     *
+     * @param cardFilesFolder the folder searched when only a file name is given
+     * @throws NullPointerException if cardFilesFolder is {@code null}
+     */
+    public CardFileLoader(Path cardFilesFolder) {
+        this.cardFilesFolder = Objects.requireNonNull(cardFilesFolder);
+    }
+
     /**
      * Reads the file and returns a deck in file order (the first code is drawn first).
      *
@@ -39,13 +55,13 @@ public final class CardFileLoader {
      *
      * <p>Calls:
      * <ul>
-     *   <li>{@code resolveFile()} - finds the file, also in resources</li>
+     *   <li>{@code resolveFile()} - finds the file, also in the card-files folder</li>
      *   <li>{@code parseCard()} - turns each code into a card</li>
      * </ul>
      *
      * <p>Called by: {@link ConsoleInput#loadDeck}, {@code SolitaireApplication.run()}.
      *
-     * @param filePath the card file to read; a bare file name is also looked for in the resources folder
+     * @param filePath the card file to read; a bare file name is also looked for in the card-files folder
      * @return a deck of the 52 cards in file order
      * @throws IOException if the file does not exist, is a folder, or cannot be read
      * @throws IllegalArgumentException for an invalid code, a duplicate card, or a card count other than 52
@@ -84,7 +100,7 @@ public final class CardFileLoader {
 
     /**
      * Returns the path to read. If the path does not exist and is only a file name, such as input.txt, it is looked up
-     * in the resources folder instead.
+     * in the card-files folder instead (card-files by default).
      *
      * <p>Called by: {@link #load}.
      *
@@ -96,7 +112,7 @@ public final class CardFileLoader {
         Path resolvedPath = requestedPath;
         if (!Files.exists(requestedPath) && !requestedPath.isAbsolute()
                 && requestedPath.getNameCount() == 1) {
-            resolvedPath = Path.of("resources").resolve(requestedPath);
+            resolvedPath = cardFilesFolder.resolve(requestedPath);
         }
         if (Files.isDirectory(resolvedPath)) {
             throw new IOException("'" + requestedPath + "' is a folder. Enter a card file path.");
@@ -148,7 +164,7 @@ public final class CardFileLoader {
      *
      * @param suitCode the suit part of a card code, such as "H"
      * @param lineNumber the line in the file, used in error messages
-     * @return the suit with this code (H, D, C, or S)
+     * @return the matching suit
      * @throws IllegalArgumentException with the line number for any other code
      */
     private Suit parseSuit(String suitCode, int lineNumber) {
@@ -173,7 +189,7 @@ public final class CardFileLoader {
      *
      * @param rankSymbol the rank part of a card code, such as "10"
      * @param lineNumber the line in the file, used in error messages
-     * @return the rank with this symbol (A, 2 to 10, J, Q, or K)
+     * @return the matching rank
      * @throws IllegalArgumentException with the line number for any other symbol
      */
     private Rank parseRank(String rankSymbol, int lineNumber) {

@@ -39,6 +39,10 @@ public final class Deck {
      * Creates a deck from a list whose first card is the first to be drawn. Stores copies, so later changes to the
      * list's cards do not affect the deck.
      *
+     * <p>Key idea: {@code HashSet.add()} returns {@code false} when an equal card is already in the set, which is how a
+     * duplicate is found in one pass. It works because Card overrides equals() and hashCode() to compare suit and rank
+     * only.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@link Card#code} - names the duplicate in the error</li>
@@ -75,7 +79,7 @@ public final class Deck {
      *
      * <p>Called by: {@code ShuffleConfiguration.prepareDeck()}.
      *
-     * @return copies of the cards in the order they will be drawn (first element = next card)
+     * @return copies of the cards, next card first
      */
     public List<Card> drawOrder() {
         List<Card> drawOrderSnapshot = new ArrayList<>();

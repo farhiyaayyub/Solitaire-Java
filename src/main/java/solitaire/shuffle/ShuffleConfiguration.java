@@ -50,11 +50,6 @@ public record ShuffleConfiguration(ShuffleType type, boolean randomizedInitial, 
     /**
      * Returns a new standard deck shuffled with these settings.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #prepareDeck} - does the work with a new standard deck</li>
-     * </ul>
-     *
      * <p>Called by: {@code GameController.manual()}, {@code GameController.simulate()}.
      *
      * @return a new standard deck shuffled with these settings
@@ -67,6 +62,9 @@ public record ShuffleConfiguration(ShuffleType type, boolean randomizedInitial, 
      * Returns a new shuffled deck built from the supplied deck's order; the supplied deck is not changed. Steps: copy
      * the order, apply a random shuffle first if randomizedInitial, apply the chosen strategy, then check that the
      * result still has 52 unique cards.
+     *
+     * <p>Key idea: the shuffled cards go into a new Deck, whose constructor rejects a duplicate or a count other than
+     * 52, and verify() checks again. So a faulty shuffle is caught here, before any card is dealt.
      *
      * <p>Calls:
      * <ul>

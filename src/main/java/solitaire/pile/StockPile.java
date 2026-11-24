@@ -40,6 +40,8 @@ public final class StockPile extends CardPile {
     /**
      * Always returns {@code false}: players never place cards on the stock; only recycle() refills it.
      *
+     * <p>Implements {@link CardPile#accepts}.
+     *
      * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()} (through CardPile),
      * {@link CardPile#place} (through CardPile).
      *
@@ -54,10 +56,7 @@ public final class StockPile extends CardPile {
     /**
      * Returns a new stock holding copies of these cards in the same order.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#copyCardsInto} - fills the new pile with copies</li>
-     * </ul>
+     * <p>Implements {@link CardPile#copy}.
      *
      * <p>Called by: {@code GameState.copy()}.
      *
@@ -71,12 +70,6 @@ public final class StockPile extends CardPile {
     /**
      * Moves one card from the top of the stock to the top of the waste and turns it face up. A Draw 3 move calls this
      * three times.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#takeTop} - removes the top stock card</li>
-     *   <li>{@code WastePile.receiveDrawn()} - puts it face up on the waste</li>
-     * </ul>
      *
      * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
      *

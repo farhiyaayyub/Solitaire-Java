@@ -17,6 +17,6 @@ public enum GameStatus {
      * unwinnable.
      */
     STUCK,
-    /** The solver reached its decision, move, or time limit before winning or getting stuck. */
+    /** The solver reached its move or time limit before winning or getting stuck. */
     LIMIT_REACHED
 }

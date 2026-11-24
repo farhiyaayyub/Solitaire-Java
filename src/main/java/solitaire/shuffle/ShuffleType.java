@@ -46,7 +46,7 @@ public enum ShuffleType {
      *
      * <p>Called by: {@code GameController.simulateBatch()}, {@code ConsoleInput.shuffleConfiguration()}.
      *
-     * @return {@code true} for IN and OUT, the two perfect (Faro) shuffles
+     * @return {@code true} for IN and OUT
      */
     public boolean isFaro() {
         return this == IN || this == OUT;

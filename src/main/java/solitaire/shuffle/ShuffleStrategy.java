@@ -18,6 +18,9 @@ public interface ShuffleStrategy {
      * Returns a new, unmodifiable list with the cards in shuffled order; the first element is the first card to be
      * drawn. The input list is not changed. Strategies that are not random ignore the seed.
      *
+     * <p>Implemented by {@link RandomShuffle}, {@link FaroShuffle} (used by InFaroShuffle and OutFaroShuffle), and
+     * {@link NoShuffle}.
+     *
      * <p>Called by: {@link ShuffleConfiguration#prepareDeck}.
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
@@ -28,6 +31,8 @@ public interface ShuffleStrategy {
 
     /**
      * Returns the name shown to the player, such as "Random" or "In Faro".
+     *
+     * <p>Implemented by {@link RandomShuffle}, {@link InFaroShuffle}, {@link OutFaroShuffle}, and {@link NoShuffle}.
      *
      * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()}.
      *

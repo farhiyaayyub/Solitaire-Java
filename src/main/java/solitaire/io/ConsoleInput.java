@@ -20,31 +20,43 @@ import solitaire.shuffle.ShuffleType;
  * valid answers. Every question accepts q to cancel, and the end of input (for example Ctrl+Z) counts as q.
  *
  * <p>Encapsulation: the scanner and helpers are private; other classes only call the public question methods.
- * Composition: it uses a CardFileLoader to load decks.
+ * Composition: it uses a CardFileLoader to load decks. Both the loader and the game limit are passed in, so their
+ * settings come from solitaire.properties.
  *
  * @author Farhiya Ayyub
  */
 public final class ConsoleInput {
-    // The two shuffle options appear in both shuffle menus (standard deck and file deck).
     private static final String CANCEL = "q";
-    // Upper limit for a simulation from the menu, so a typo such as 10000 cannot start a very long run.
-    private static final int MAX_GAME_COUNT = 100;
+    // The two shuffle options appear in both shuffle menus (standard deck and file deck).
     private static final String RANDOM_OPTION = "[1] Random           - mix the cards randomly";
     private static final String PERFECT_OPTION = "[2] Perfect shuffle  - split the deck in half and interleave (Faro)";
 
-    // Unseeded, so each menu game gets a different seed.
     private final Scanner scanner;
-    private final CardFileLoader cardFileLoader = new CardFileLoader();
+    private final CardFileLoader cardFileLoader;
+    // Upper limit for a simulation from the menu, so a typo such as 10000 cannot start a very long run.
+    private final int maxGameCount;
+    // Unseeded, so each menu game gets a different seed.
     private final Random seedGenerator = new Random();
 
     /**
-     * Reads all answers from the supplied scanner.
+     * Reads all answers from the supplied scanner, loads card files with the supplied loader, and accepts at most
+     * maxGameCount games for a simulation.
+     *
+     * <p>Called by: {@code SolitaireApplication.getController()}.
      *
      * @param scanner the source of the player's answers
-     * @throws NullPointerException if scanner is {@code null}
+     * @param cardFileLoader loads the card file the player names
+     * @param maxGameCount the highest number of games the player may enter (simulation.maxGameCount)
+     * @throws NullPointerException if scanner or cardFileLoader is {@code null}
+     * @throws IllegalArgumentException if maxGameCount is less than 1
      */
-    public ConsoleInput(Scanner scanner) {
+    public ConsoleInput(Scanner scanner, CardFileLoader cardFileLoader, int maxGameCount) {
         this.scanner = Objects.requireNonNull(scanner);
+        this.cardFileLoader = Objects.requireNonNull(cardFileLoader);
+        if (maxGameCount < 1) {
+            throw new IllegalArgumentException("The maximum game count must be at least 1");
+        }
+        this.maxGameCount = maxGameCount;
     }
 
     /**
@@ -62,7 +74,7 @@ public final class ConsoleInput {
     public String deckSource() {
         return menu("Choose a deck", "12",
                 "[1] Standard deck  - a normal 52-card deck",
-                "[2] Card file      - use your own 52 cards from a file (for example input.txt)");
+                "[2] Card file      - use your own 52 cards from a file (input.txt)");
     }
 
     /**
@@ -150,7 +162,7 @@ public final class ConsoleInput {
      *
      * <p>Called by: {@code GameController.playFromMenu()}.
      *
-     * @return the selected draw count (1 or 3), or 0 if the player cancels
+     * @return 1, 3, or 0 for q
      */
     public int drawCount() {
         String selected = menu("How many cards to turn from the stock each time?", "13",
@@ -169,7 +181,7 @@ public final class ConsoleInput {
      *
      * <p>Called by: {@code GameController.playFromMenu()}.
      *
-     * @return "1" to watch one game move by move, "2" to test the win rate over many games, or "q"
+     * @return "1", "2", or "q"
      */
     public String playMode() {
         return menu("What do you want to do?", "12",
@@ -178,7 +190,12 @@ public final class ConsoleInput {
     }
 
     /**
-     * Asks until the player enters a whole number from 1 to 100 and returns it, or returns 0 for q.
+     * Asks until the player enters a whole number from 1 to the maximum game count (simulation.maxGameCount, 100 by
+     * default) and returns it, or returns 0 for q.
+     *
+     * <p>Key idea: {@code Integer.parseInt} throws NumberFormatException for text that is not a number, which is
+     * caught; a number outside 1 to the maximum is rejected by a range check. Both print the same red error and ask
+     * again.
      *
      * <p>Calls:
      * <ul>
@@ -188,33 +205,28 @@ public final class ConsoleInput {
      *
      * <p>Called by: {@code GameController.playFromMenu()}.
      *
-     * @return the number of games, 1 to 100, or 0 if the player enters q
+     * @return the number of games, 1 to the maximum game count, or 0 if the player enters q
      */
     public int gameCount() {
         while (true) {
-            String value = read("\nHow many games should be played? (1 to " + MAX_GAME_COUNT + "), or q to exit:\n> ");
+            String value = read("\nHow many games should be played? (1 to " + maxGameCount + "), or q to exit:\n> ");
             if (value.equals(CANCEL)) {
                 return 0;
             }
             try {
                 int count = Integer.parseInt(value);
-                if (count >= 1 && count <= MAX_GAME_COUNT) {
+                if (count >= 1 && count <= maxGameCount) {
                     return count;
                 }
             } catch (NumberFormatException ignored) {
                 // Falls through to the retry message below.
             }
-            showError("Enter a whole number from 1 to " + MAX_GAME_COUNT + ".");
+            showError("Enter a whole number from 1 to " + maxGameCount + ".");
         }
     }
 
     /**
      * Returns {@code true} if the player answers y to watching game 1 of the simulation move by move.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code choice()} - accepts only y, n, or q</li>
-     * </ul>
      *
      * <p>Called by: {@code GameController.playFromMenu()}.
      *
@@ -226,11 +238,6 @@ public final class ConsoleInput {
 
     /**
      * Returns {@code true} if the player answers y to playing again; n or q returns {@code false}.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code choice()} - accepts only y, n, or q</li>
-     * </ul>
      *
      * <p>Called by: {@code GameController.shuffleAndPlay()}.
      *
@@ -312,6 +319,9 @@ public final class ConsoleInput {
     /**
      * Asks until the answer is q or exactly one of the characters in allowedChoices, and returns it.
      *
+     * <p>Key idea: a {@code while (true)} loop asks again until the answer is valid. An answer is valid when it is q or
+     * exactly one character found in allowedChoices; anything else prints a red error through showError().
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@code read()} - reads one answer</li>
@@ -339,11 +349,6 @@ public final class ConsoleInput {
      * Prints an input error indented and in red, so it stands out from the menus and prompts. Every message about a
      * wrong answer goes through here, so all errors look the same.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link ConsoleColor#paint} - makes the message red</li>
-     * </ul>
-     *
      * <p>Called by: {@link #loadDeck}, {@link #gameCount}, {@link #selectMove}, {@code choice()}.
      *
      * @param message the error text
@@ -354,11 +359,6 @@ public final class ConsoleInput {
 
     /**
      * Prints the prompt and returns the answer trimmed and in lower case, so "Q" and "q" are the same.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code readExact()} - reads the line before it is lowercased</li>
-     * </ul>
      *
      * <p>Called by: {@link #gameCount}, {@link #selectMove}, {@code choice()}.
      *

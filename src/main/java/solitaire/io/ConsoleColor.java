@@ -35,7 +35,7 @@ public enum ConsoleColor {
      * {@link ConsoleRenderer#nextMove}, {@code ConsoleRenderer.showCard()}, {@code SolitaireApplication.run()}.
      *
      * @param text the text to color
-     * @return the text between this color's code and the reset code, so only that text is colored
+     * @return the colored text
      */
     public String paint(String text) {
         return escapeCode + text + RESET;

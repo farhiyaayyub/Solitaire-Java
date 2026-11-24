@@ -30,21 +30,16 @@ public final class FoundationPile extends CardPile {
      * Returns {@code true} only for a face-up card of this suit whose rank value is size() + 1: an Ace on an empty
      * foundation, a 2 on the Ace, and so on up to the King.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#isFaceUp} - only face-up cards may move</li>
-     *   <li>{@link Card#suit()} - must match this foundation's suit</li>
-     *   <li>{@link Card#rank()} - gets the rank to compare</li>
-     *   <li>{@code Rank.value()} - gives the rank as a number</li>
-     *   <li>{@link CardPile#size} - the next rank needed is size() + 1</li>
-     * </ul>
+     * <p>Key idea: a foundation holds Ace, 2, 3, ... in order, so its size is also the rank of its top card. The next
+     * rank needed is therefore {@code size() + 1}, without looking at the top card.
+     *
+     * <p>Implements {@link CardPile#accepts}.
      *
      * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()} (through CardPile),
      * {@link CardPile#place} (through CardPile).
      *
      * @param card the card to check
-     * @return {@code true} only for a face-up card of this suit whose rank value is size() + 1: an Ace on an empty
-     *     foundation, a 2 on the Ace, and so on up to the King
+     * @return {@code true} if the card is the next one for this foundation
      */
     @Override
     public boolean accepts(Card card) {
@@ -54,10 +49,7 @@ public final class FoundationPile extends CardPile {
     /**
      * Returns a new foundation of the same suit holding copies of these cards.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#copyCardsInto} - fills the new pile with copies</li>
-     * </ul>
+     * <p>Implements {@link CardPile#copy}.
      *
      * <p>Called by: {@code GameState.copy()}.
      *

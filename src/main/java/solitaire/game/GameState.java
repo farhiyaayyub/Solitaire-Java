@@ -67,11 +67,6 @@ public final class GameState {
     /**
      * Same as deal(deck, 1): deals a Draw 1 board. The deck is used in its current order.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #deal} - does the work with Draw 1</li>
-     * </ul>
-     *
      * <p>Called by: {@link GameController#manual}, {@code SolvableDealProvider.create()}.
      *
      * @param deck the deck to deal from, already in the wanted order
@@ -133,7 +128,7 @@ public final class GameState {
      * <p>Called by: {@code ConsoleRenderer.render()}, {@code MoveGenerator.addLegalMoves()},
      * {@code MoveValidator.isLegalDraw()}, {@code ObservableBoard.from()}.
      *
-     * @return the draw mode: 1 or 3 cards per draw
+     * @return 1 or 3
      */
     public int drawCount() {
         return drawCount;
@@ -172,7 +167,7 @@ public final class GameState {
      * {@code MoveGenerator.addLegalMoves()}, {@code MoveValidator.isLegalTableauTransfer()},
      * {@code ObservableBoard.from()}.
      *
-     * @return the seven columns, index 0 (T1) to 6 (T7)
+     * @return the seven columns, as a list that cannot be resized
      */
     public List<TableauPile> tableau() {
         return Collections.unmodifiableList(tableau);
@@ -242,11 +237,6 @@ public final class GameState {
     /**
      * Returns the total number of cards on the four foundations, from 0 to 52.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#size} - counts the cards on each foundation</li>
-     * </ul>
-     *
      * <p>Called by: {@link #won}.
      *
      * @return the total number of cards on the four foundations, from 0 to 52
@@ -268,8 +258,7 @@ public final class GameState {
      * <p>Called by: {@link GameController#manual}, {@link SolitaireGame#SolitaireGame}, {@link SolitaireGame#finish},
      * {@link SolitaireGame#play}, {@code SolvableDealProvider.create()}, {@code VisibleSolver.solve()}.
      *
-     * @return {@code true} only when all 52 cards are on the foundations and the stock, waste, and every column are
-     *     empty
+     * @return {@code true} if the game is won
      */
     public boolean won() {
         return foundationCount() == Deck.CARD_COUNT && stock.isEmpty() && waste.isEmpty()

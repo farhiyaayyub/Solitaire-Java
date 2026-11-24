@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Scanner;
 
+import solitaire.config.GameConfig;
 import solitaire.game.GameController;
 import solitaire.io.CardFileLoader;
 import solitaire.io.ConsoleColor;
@@ -22,13 +23,8 @@ import solitaire.solver.VisibleSolver;
  * @author Farhiya Ayyub
  */
 public final class SolitaireApplication {
-    // Constants: solver limits used when the command line does not give them (15,000 decisions, 3,000 moves,
-    // 10 seconds per game), the default game count and seed, and the three exit codes.
-    private static final int DEFAULT_MAX_DECISIONS = 15_000;
-    private static final int DEFAULT_MAX_MOVES = 3_000;
-    private static final long DEFAULT_MAX_MILLIS = 10_000;
-    private static final int DEFAULT_GAME_COUNT = 100;
-    private static final long DEFAULT_SEED = 0;
+    // Exit codes. The solver limits, game counts, and seed are no longer fixed here: they come from
+    // solitaire.properties through GameConfig, so they can change without rebuilding.
     private static final int EXIT_SUCCESS = 0;
     private static final int EXIT_FAILURE = 1;
     private static final int EXIT_INVALID_INPUT = 2;
@@ -38,11 +34,14 @@ public final class SolitaireApplication {
     }
 
     /**
-     * Validates the arguments, builds the controller, and runs one command. Errors are caught here and printed in red.
+     * Reads the settings, validates the arguments, builds the controller, and runs one command. Errors are caught here
+     * and printed in red.
      *
      * <p>Calls:
      * <ul>
+     *   <li>{@link GameConfig#load} - reads solitaire.properties, or uses the defaults</li>
      *   <li>{@code validateArguments()} - rejects bad commands before any work starts</li>
+     *   <li>{@code getController()} - builds the controller with the solver limits</li>
      *   <li>{@code intArgument()} - reads a whole-number argument or its default</li>
      *   <li>{@code longArgument()} - reads a seed or time argument or its default</li>
      *   <li>{@link CardFileLoader#load} - checks the card file for the validate command</li>
@@ -60,37 +59,42 @@ public final class SolitaireApplication {
      * <p>Called by: {@link Main#main}.
      *
      * @param args the command-line arguments; the first one is the command
-     * @return 0 on success, 1 for a file or game error, or 2 for invalid input (including a number that cannot be
-     *     parsed)
+     * @return 0 on success, 1 for a file or game error, or 2 for invalid input or invalid settings (including a
+     *     number that cannot be parsed)
      */
     public static int run(String[] args) {
+        // The settings are read first, so a broken configuration file is reported before anything else happens.
+        GameConfig config;
+        try {
+            config = GameConfig.load(GameConfig.DEFAULT_FILE);
+        } catch (IllegalArgumentException exception) {
+            // A wrong value in solitaire.properties: the player can fix it.
+            System.err.println(ConsoleColor.RED.paint("Configuration error: " + exception.getMessage()));
+            return EXIT_INVALID_INPUT;
+        } catch (IOException | IllegalStateException exception) {
+            // A settings file that cannot be read, or default.properties missing from the program.
+            System.err.println(ConsoleColor.RED.paint("Configuration error: " + exception.getMessage()));
+            return EXIT_FAILURE;
+        }
         // try-with-resources closes the keyboard Scanner when the command finishes or fails.
         try (Scanner input = new Scanner(System.in)) {
             String command = args.length == 0 ? "shuffle" : args[0];
             validateArguments(command, args);
-            // Arguments 4 to 6 (indexes 3 to 5) override the default solver limits.
-            SolitaireSolver.Limits limits = new SolitaireSolver.Limits(
-                    intArgument(args, 3, DEFAULT_MAX_DECISIONS),
-                    intArgument(args, 4, DEFAULT_MAX_MOVES),
-                    longArgument(args, 5, DEFAULT_MAX_MILLIS));
-            // The solver is passed in through the SolitaireSolver interface, so GameController does not depend on
-            // VisibleSolver directly.
-            GameController controller = new GameController(new VisibleSolver(limits), new ConsoleInput(input));
+            GameController controller = getController(args, input, config);
             switch (command) {
                 case "validate" -> {
-                    new CardFileLoader().load(Path.of(args[1]));
+                    new CardFileLoader(config.cardFilesFolder()).load(Path.of(args[1]));
                     System.out.println("VALID: " + args[1] + " - 52 unique cards, valid suits and ranks.");
                 }
                 case "shuffle", "menu" -> controller.shuffleAndPlay();
                 case "guaranteed" -> controller.guaranteed(hasCompactOption(args, 1));
-                case "random" -> controller.automatic(
-                        new ShuffleConfiguration(ShuffleType.RANDOM, false, longArgument(args, 1, DEFAULT_SEED)),
-                        hasCompactOption(args, 2));
-                case "simulate" -> controller.simulate(intArgument(args, 1, DEFAULT_GAME_COUNT),
-                        longArgument(args, 2, DEFAULT_SEED));
-                case "compare" -> controller.compare(intArgument(args, 1, DEFAULT_GAME_COUNT),
-                        longArgument(args, 2, DEFAULT_SEED));
-                case "manual" -> controller.manual(DEFAULT_SEED);
+                case "random" -> controller.automatic(new ShuffleConfiguration(ShuffleType.RANDOM, false,
+                        longArgument(args, 1, config.defaultSeed())), hasCompactOption(args, 2));
+                case "simulate" -> controller.simulate(intArgument(args, 1, config.defaultGameCount()),
+                        longArgument(args, 2, config.defaultSeed()));
+                case "compare" -> controller.compare(intArgument(args, 1, config.defaultGameCount()),
+                        longArgument(args, 2, config.defaultSeed()));
+                case "manual" -> controller.manual(config.defaultSeed());
                 case "help", "--help" -> printUsage();
                 default -> throw new IllegalArgumentException("Unknown command: " + command);
             }
@@ -112,6 +116,33 @@ public final class SolitaireApplication {
     }
 
     /**
+     * Creates the controller and the objects it needs. The solver limits come from the settings, unless arguments 4
+     * and 5 (indexes 3 and 4) give them on the command line.
+     *
+     * <p>Calls:
+     * <ul>
+     *   <li>{@code intArgument()} / {@code longArgument()} - read a limit from the command line or the settings</li>
+     * </ul>
+     *
+     * <p>Called by: {@link #run}.
+     *
+     * @param args the command-line arguments; the first one is the command
+     * @param input reads the player's answers
+     * @param config the settings from solitaire.properties
+     * @return a controller with a VisibleSolver and a ConsoleInput
+     */
+    private static GameController getController(String[] args, Scanner input, GameConfig config) {
+        SolitaireSolver.Limits limits = new SolitaireSolver.Limits(
+                intArgument(args, 3, config.maxMoves()),
+                longArgument(args, 4, config.maxMillis()));
+        // Each object receives what it needs from outside (dependency injection): the solver is passed in through
+        // the SolitaireSolver interface, and ConsoleInput gets its file loader and game limit from the settings.
+        ConsoleInput consoleInput = new ConsoleInput(input, new CardFileLoader(config.cardFilesFolder()),
+                config.maxGameCount());
+        return new GameController(new VisibleSolver(limits), consoleInput);
+    }
+
+    /**
      * Checks the command and its arguments before any work starts.
      *
      * <p>Called by: {@link #run}.
@@ -128,7 +159,7 @@ public final class SolitaireApplication {
         int maximumArguments = switch (command) {
             case "shuffle", "menu", "manual", "help", "--help" -> 1;
             case "guaranteed", "validate" -> 2;
-            case "random", "simulate", "compare" -> 6;
+            case "random", "simulate", "compare" -> 5;
             default -> throw new IllegalArgumentException("Unknown command: " + command);
         };
         if (args.length > maximumArguments) {
@@ -167,7 +198,7 @@ public final class SolitaireApplication {
      * @param args the command-line arguments; the first one is the command
      * @param index the position of the argument
      * @param defaultValue the value to use when the argument is missing
-     * @return the argument at the index as an int, or the default when the argument is missing
+     * @return the argument, or the default
      * @throws NumberFormatException if the argument is not a whole number
      */
     private static int intArgument(String[] args, int index, int defaultValue) {
@@ -182,7 +213,7 @@ public final class SolitaireApplication {
      * @param args the command-line arguments; the first one is the command
      * @param index the position of the argument
      * @param defaultValue the value to use when the argument is missing
-     * @return the argument at the index as a long, or the default when the argument is missing
+     * @return the argument, or the default
      * @throws NumberFormatException if the argument is not a whole number
      */
     private static long longArgument(String[] args, int index, long defaultValue) {
@@ -200,9 +231,9 @@ public final class SolitaireApplication {
                   shuffle | menu        Interactive setup (standard deck or card file).
                   validate <card-file>  Check a deck file without starting a game.
                   guaranteed [--compact|--verbose]
-                  random [seed [--compact|--verbose [decisions [moves [ms]]]]]
-                  simulate [count [firstSeed [decisions [moves [ms]]]]]
-                  compare [count [firstSeed [decisions [moves [ms]]]]]
+                  random [seed [--compact|--verbose [moves [ms]]]]
+                  simulate [count [firstSeed [moves [ms]]]]
+                  compare [count [firstSeed [moves [ms]]]]
                   manual
                   help""");
     }

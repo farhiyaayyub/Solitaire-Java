@@ -26,6 +26,8 @@ public final class RandomShuffle implements ShuffleStrategy {
      *   <li>Return the result as an unmodifiable list.</li>
      * </ol>
      *
+     * <p>Implements {@link ShuffleStrategy#shuffle}.
+     *
      * <p>Called by: {@link ShuffleConfiguration#prepareDeck} (through ShuffleStrategy).
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
@@ -41,6 +43,8 @@ public final class RandomShuffle implements ShuffleStrategy {
 
     /**
      * Returns "Random".
+     *
+     * <p>Implements {@link ShuffleStrategy#name}.
      *
      * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()} (through ShuffleStrategy).
      *

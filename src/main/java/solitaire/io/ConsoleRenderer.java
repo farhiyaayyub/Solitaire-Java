@@ -44,11 +44,6 @@ public final class ConsoleRenderer {
     /**
      * Prints the title after a blank line, indented and in cyan.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link ConsoleColor#paint} - colors the title cyan</li>
-     * </ul>
-     *
      * <p>Called by: {@link ConsoleInput#selectMove}, {@link #render}, {@link #simulationSummary},
      * {@code renderTableau()}.
      *
@@ -114,7 +109,7 @@ public final class ConsoleRenderer {
      * <p>Called by: {@link #render}, {@link #simulationGame}.
      *
      * @param status the status to describe
-     * @return the status line text, such as "Won - all 52 cards completed"
+     * @return the status in words
      */
     public String statusText(GameStatus status) {
         return switch (status) {
@@ -181,7 +176,7 @@ public final class ConsoleRenderer {
      *
      * @param pile the pile to name
      * @param index the column or foundation index from the move
-     * @return how a pile is named in a move sentence: "T1" to "T7" for a column
+     * @return the pile's name for a move sentence
      */
     private static String pileName(CardPile pile, int index) {
         if (pile instanceof FoundationPile) {
@@ -192,12 +187,6 @@ public final class ConsoleRenderer {
 
     /**
      * Prints "Shuffle: " followed by the strategy's name, such as Random or In Faro.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code ShuffleType.strategy()} - gets the chosen shuffle object</li>
-     *   <li>{@code ShuffleStrategy.name()} - gets its display name</li>
-     * </ul>
      *
      * <p>Called by: {@code GameController.automatic()}, {@code GameController.simulate()}.
      *
@@ -222,12 +211,6 @@ public final class ConsoleRenderer {
      * Prints "Next move: " and the move sentence in yellow. The board must be the one before the move is played, so the
      * sentence names the card that is about to move.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #describeMove} - turns the move into a sentence</li>
-     *   <li>{@link ConsoleColor#paint} - makes the sentence yellow</li>
-     * </ul>
-     *
      * <p>Called by: {@code GameController.replay()}.
      *
      * @param move the move about to be played
@@ -251,11 +234,6 @@ public final class ConsoleRenderer {
     /**
      * Prints the heading "SOLITAIRE SIMULATION REPORT".
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #heading} - prints the report title</li>
-     * </ul>
-     *
      * <p>Called by: {@code GameController.simulate()}.
      */
     public void simulationStarted() {
@@ -264,11 +242,6 @@ public final class ConsoleRenderer {
 
     /**
      * Prints one line for a simulated game, such as "Game 3 | Won - all 52 cards completed | Moves: 112".
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #statusText} - turns the status into words</li>
-     * </ul>
      *
      * <p>Called by: {@code GameController.simulate()}.
      *
@@ -282,7 +255,7 @@ public final class ConsoleRenderer {
 
     /**
      * Prints the number of games won and not solved (split into limit reached and no new moves), the win rate as a
-     * percentage, and the average moves and decisions per game, each with 2 decimal places.
+     * percentage, and the average moves per game, each with 2 decimal places.
      *
      * <p>Calls:
      * <ul>
@@ -296,17 +269,15 @@ public final class ConsoleRenderer {
      * @param limitedGames games that reached a limit
      * @param stuckGames games that got stuck
      * @param moves moves played in all games together
-     * @param totalDecisions decisions made in all games together
      */
-    public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves,
-                                  long totalDecisions) {
+    public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves) {
         section("RESULTS");
         System.out.printf(Locale.ROOT,
                 "  Games: %d | Won: %d | Not solved: %d%n"
                         + "  Limit reached: %d | No new moves: %d | Win rate: %.2f%%%n"
-                        + "  Average moves: %.2f | Average decisions: %.2f%n",
+                        + "  Average moves: %.2f%n",
                 count, won, count - won, limitedGames, stuckGames,
-                100.0 * won / count, (double) moves / count, (double) totalDecisions / count);
+                100.0 * won / count, (double) moves / count);
     }
 
     /**
@@ -369,19 +340,11 @@ public final class ConsoleRenderer {
      * Returns the top card's text, or the empty slot if the pile is empty, followed by spaces up to width. It accepts
      * any CardPile, so the same method is used for the waste and for every foundation.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#isEmpty} - shows an empty slot for an empty pile</li>
-     *   <li>{@code pad()} - spaces after the empty slot</li>
-     *   <li>{@link CardPile#top} - gets the top card</li>
-     *   <li>{@code showCard()} - shows the top card, red for a red suit</li>
-     * </ul>
-     *
      * <p>Called by: {@link #render}.
      *
      * @param pile the pile to show
      * @param width the number of characters to fill
-     * @return the top card's text, or the empty slot if the pile is empty, followed by spaces up to width
+     * @return the padded top card or empty slot
      */
     private static String topOrEmpty(CardPile pile, int width) {
         return pile.isEmpty() ? pad(EMPTY_SLOT, width) : showCard(pile.top(), width);

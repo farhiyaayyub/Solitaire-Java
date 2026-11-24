@@ -22,6 +22,8 @@ public record Move(MoveType type, int source, int destination, int count) {
      * Returns a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
      * cards=2", used in error messages. The screen uses ConsoleRenderer.describeMove(), which also names the card.
      *
+     * <p>Overrides the {@code toString()} that Java generates for a record.
+     *
      * <p>Called by: string concatenation in the error message of {@code SolitaireGame.apply()}.
      *
      * @return a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6

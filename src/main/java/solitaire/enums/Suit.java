@@ -43,7 +43,7 @@ public enum Suit {
      *
      * <p>Called by: {@code CardFileLoader.parseSuit()}, {@code Card.code()}.
      *
-     * @return the one-letter code used in card files: H, D, C, or S
+     * @return the suit letter, such as "H"
      */
     public String code() {
         return code;
@@ -54,7 +54,7 @@ public enum Suit {
      *
      * <p>Called by: {@code ConsoleRenderer.render()}.
      *
-     * @return the symbol printed on screen: ♥, ♦, ♣, or ♠
+     * @return the suit symbol, such as "♥"
      */
     public String symbol() {
         return symbol;

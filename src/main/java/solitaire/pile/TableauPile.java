@@ -44,6 +44,8 @@ public final class TableauPile extends CardPile {
      * Returns {@code true} for a face-up King on an empty column, or a face-up card one rank lower and the opposite
      * color of a face-up top card. Returns {@code false} for {@code null} or a face-down card.
      *
+     * <p>Implements {@link CardPile#accepts}.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@link Card#isFaceUp} - only face-up cards may move</li>
@@ -58,8 +60,7 @@ public final class TableauPile extends CardPile {
      * {@code MoveValidator.isLegalSingleCardMove()} (through CardPile), {@link CardPile#place} (through CardPile).
      *
      * @param card the card to check
-     * @return {@code true} for a face-up King on an empty column, or a face-up card one rank lower and the opposite
-     *     color of a face-up top card
+     * @return {@code true} if the card may be placed on this column
      */
     @Override
     public boolean accepts(Card card) {
@@ -76,10 +77,7 @@ public final class TableauPile extends CardPile {
     /**
      * Returns a new column holding copies of these cards, with the same face-up flags.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#copyCardsInto} - fills the new pile with copies</li>
-     * </ul>
+     * <p>Implements {@link CardPile#copy}.
      *
      * <p>Called by: {@code GameState.copy()}.
      *
@@ -93,10 +91,7 @@ public final class TableauPile extends CardPile {
     /**
      * Turns the new top card face up after cards are removed, as Klondike requires.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code revealTop()} - turns the new top card face up</li>
-     * </ul>
+     * <p>Overrides {@link CardPile#onTopRemoved}, which does nothing in CardPile.
      *
      * <p>Called by: {@link CardPile#takeTop} (through CardPile), {@link CardPile#removeTopCards} (through CardPile).
      */
@@ -217,18 +212,11 @@ public final class TableauPile extends CardPile {
     /**
      * Returns {@code true} if {@code lower} can sit directly on {@code upper}: one rank lower and the opposite color.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#rank()} - gets each rank</li>
-     *   <li>{@link Rank#value()} - compares ranks as numbers</li>
-     *   <li>{@link Card#isRed} - compares colors</li>
-     * </ul>
-     *
      * <p>Called by: {@link #accepts}, {@link #isValidSequence}, {@code isOrderedSequence()}.
      *
      * @param upper the card already in the column
      * @param lower the card that would be placed on top
-     * @return {@code true} if {@code lower} can sit directly on {@code upper}: one rank lower and the opposite color
+     * @return {@code true} if lower fits on upper
      */
     private static boolean fitsBelow(Card upper, Card lower) {
         return upper.rank().value() == lower.rank().value() + 1 && upper.isRed() != lower.isRed();

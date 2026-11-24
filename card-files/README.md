@@ -1,4 +1,4 @@
-# Validation resources for the panel demonstration
+# Card files for the panel demonstration
 
 These are actual input files consumed by CardFileLoader, not example output. Open a file in IntelliJ, point out its contents, then run the matching command from the project root.
 
@@ -20,7 +20,7 @@ These are actual input files consumed by CardFileLoader, not example output. Ope
 The bare filename is resolved in this folder. An explicit path works too:
 
 ```powershell
-./run.ps1 validate resources/input.txt
+./run.ps1 validate card-files/input.txt
 ```
 
 ## Run all cases

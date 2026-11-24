@@ -1,3 +1,7 @@
 out/
 target/
 *.class
+
+# IntelliJ project settings: personal to each computer, recreated from pom.xml.
+.idea/
+*.iml

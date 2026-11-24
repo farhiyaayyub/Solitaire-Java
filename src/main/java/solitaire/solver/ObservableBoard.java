@@ -38,7 +38,7 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
          *
          * <p>Called by: {@code VisibleSolver.tableauMoveScore()}.
          *
-         * @return {@code true} if the card is face down (rank 0)
+         * @return {@code true} if face down
          */
         public boolean isHidden() {
             return rank == 0;
@@ -47,11 +47,6 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
         /**
          * Returns {@code true} for a face-up Heart or Diamond; returns {@code false} for a hidden card, whose suit is
          * unknown.
-         *
-         * <p>Calls:
-         * <ul>
-         *   <li>{@link Suit#isRed} - the color belongs to the suit</li>
-         * </ul>
          *
          * <p>Called by: {@code VisibleSolver.foundationScore()}.
          *
@@ -72,6 +67,10 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
     /**
      * Builds the view of a board: every waste and tableau card is passed through observe(), and only the size of the
      * stock and of each foundation is kept.
+     *
+     * <p>Key idea: every face-down card becomes the hidden marker (rank 0, no suit), so the solver cannot use a hidden
+     * card even by accident. Because ObservableBoard is a record, two views with the same visible cards are equal,
+     * which lets the solver use a view as a HashMap key.
      *
      * <p>Calls:
      * <ul>
@@ -101,18 +100,10 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
     /**
      * Returns the card's rank value and suit if it is face up, or the hidden marker (0, {@code null}) if not.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#isFaceUp} - decides whether to hide the card</li>
-     *   <li>{@link Card#rank()} - gets the rank of a face-up card</li>
-     *   <li>{@code Rank.value()} - stores the rank as a number</li>
-     *   <li>{@link Card#suit()} - gets the suit of a face-up card</li>
-     * </ul>
-     *
      * <p>Called by: {@link #from}.
      *
      * @param card the card to look at
-     * @return the card's rank value and suit if it is face up, or the hidden marker (0, {@code null}) if not
+     * @return the visible card, or the hidden marker
      */
     private static VisibleCard observe(Card card) {
         return card.isFaceUp() ? new VisibleCard(card.rank().value(), card.suit()) : new VisibleCard(0, null);

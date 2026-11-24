@@ -44,7 +44,7 @@ public enum Rank {
      *
      * <p>Called by: {@code CardFileLoader.parseRank()}, {@code Card.code()}.
      *
-     * @return the symbol used in card files and on screen: A, 2 to 10, J, Q, or K
+     * @return the rank symbol, such as "A" or "10"
      */
     public String symbol() {
         return symbol;

@@ -15,6 +15,8 @@ public final class NoShuffle implements ShuffleStrategy {
     /**
      * Returns an unmodifiable copy of the list in the same order; the seed is ignored.
      *
+     * <p>Implements {@link ShuffleStrategy#shuffle}.
+     *
      * <p>Called by: {@link ShuffleConfiguration#prepareDeck} (through ShuffleStrategy).
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
@@ -28,6 +30,8 @@ public final class NoShuffle implements ShuffleStrategy {
 
     /**
      * Returns "None".
+     *
+     * <p>Implements {@link ShuffleStrategy#name}.
      *
      * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()} (through ShuffleStrategy).
      *

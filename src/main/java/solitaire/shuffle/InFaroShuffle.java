@@ -11,9 +11,11 @@ public final class InFaroShuffle extends FaroShuffle {
     /**
      * Returns {@code true}, so interleaving starts with the second half.
      *
+     * <p>Implements {@link FaroShuffle#startsWithSecondHalf}.
+     *
      * <p>Called by: {@link FaroShuffle#shuffle} (through FaroShuffle).
      *
-     * @return {@code true}, so interleaving starts with the second half
+     * @return {@code true}
      */
     @Override
     protected boolean startsWithSecondHalf() {
@@ -22,6 +24,8 @@ public final class InFaroShuffle extends FaroShuffle {
 
     /**
      * Returns "In Faro".
+     *
+     * <p>Implements {@link ShuffleStrategy#name}.
      *
      * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()} (through ShuffleStrategy).
      *

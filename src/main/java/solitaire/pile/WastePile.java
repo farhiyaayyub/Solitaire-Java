@@ -14,6 +14,8 @@ public final class WastePile extends CardPile {
     /**
      * Always returns {@code false}: cards reach the waste only by drawing, through receiveDrawn().
      *
+     * <p>Implements {@link CardPile#accepts}.
+     *
      * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()} (through CardPile),
      * {@link CardPile#place} (through CardPile).
      *
@@ -28,10 +30,7 @@ public final class WastePile extends CardPile {
     /**
      * Returns a new waste holding copies of these cards in the same order.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#copyCardsInto} - fills the new pile with copies</li>
-     * </ul>
+     * <p>Implements {@link CardPile#copy}.
      *
      * <p>Called by: {@code GameState.copy()}.
      *

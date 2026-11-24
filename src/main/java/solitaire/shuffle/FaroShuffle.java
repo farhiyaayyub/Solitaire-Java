@@ -18,9 +18,11 @@ public abstract class FaroShuffle implements ShuffleStrategy {
     /**
      * Returns {@code true} if the first card comes from the second half (cards 27 to 52).
      *
+     * <p>Abstract: implemented by {@link InFaroShuffle} ({@code true}) and {@link OutFaroShuffle} ({@code false}).
+     *
      * <p>Called by: {@link #shuffle}.
      *
-     * @return {@code true} if the first card comes from the second half (cards 27 to 52)
+     * @return {@code true} if the second half goes first
      */
     protected abstract boolean startsWithSecondHalf();
 
@@ -33,6 +35,8 @@ public abstract class FaroShuffle implements ShuffleStrategy {
      *   <li>For i = 0 to 25: add card i of the half that goes first, then card i of the other half.</li>
      *   <li>In-Faro takes from the second half first; Out-Faro from the first half.</li>
      * </ol>
+     *
+     * <p>Implements {@link ShuffleStrategy#shuffle}; InFaroShuffle and OutFaroShuffle inherit it.
      *
      * <p>Calls:
      * <ul>

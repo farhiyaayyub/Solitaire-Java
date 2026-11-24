@@ -50,11 +50,6 @@ public final class SolitaireGame {
     /**
      * Returns a copy of the board. Changing the copy does not change this game.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link GameState#copy} - gives out a copy, not the real board</li>
-     * </ul>
-     *
      * <p>Called by: {@link GameController#manual}, {@code GameController.solveAndReplay()},
      * {@code GameController.replay()}, {@code ConsoleRenderer.render()}, {@code VisibleSolver.solve()}.
      *
@@ -80,7 +75,7 @@ public final class SolitaireGame {
      *
      * <p>Called by: {@code GameController.simulate()}, {@code ConsoleRenderer.render()}.
      *
-     * @return RUNNING, WON, STUCK, or LIMIT_REACHED
+     * @return the current status
      */
     public GameStatus status() {
         return status;
@@ -117,6 +112,9 @@ public final class SolitaireGame {
      *   <li>Move the cards, then check that 52 unique cards remain.</li>
      *   <li>Add 1 to the move count; set the status to WON if the board is complete.</li>
      * </ol>
+     *
+     * <p>Key idea: besides the two checks in the steps, place() checks the destination's accepts() once more while the
+     * card moves, so an illegal card can never land on a pile.
      *
      * <p>Calls:
      * <ul>

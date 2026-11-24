@@ -46,9 +46,9 @@ public final class VisibleSolver implements SolitaireSolver {
     private final MoveGenerator generator = new MoveGenerator();
 
     /**
-     * Stores the decision, move, and time limits used for every game.
+     * Stores the move and time limits used for every game.
      *
-     * @param limits the decision, move, and time limits for every game
+     * @param limits the move and time limits for every game
      * @throws NullPointerException if limits is {@code null}
      */
     public VisibleSolver(SolitaireSolver.Limits limits) {
@@ -59,7 +59,7 @@ public final class VisibleSolver implements SolitaireSolver {
      * Plays one game on its own copy of the board and returns how it ended, with the moves played.
      *
      * <p>Algorithm: greedy search with memory. It always takes the best-looking move and never undoes one.
-     * Each turn, while the decision, move, and time limits are not reached:
+     * Each turn, while the move and time limits are not reached:
      * <ol>
      *   <li>If the board is won, return WON.</li>
      *   <li>Hide the face-down cards to get the visible position.</li>
@@ -68,6 +68,14 @@ public final class VisibleSolver implements SolitaireSolver {
      *   <li>Remember the move as tried in this position, then play it.</li>
      * </ol>
      * When a limit is reached, return WON if the last move won the game, otherwise LIMIT_REACHED.
+     *
+     * <p>Key idea: a {@code HashMap<ObservableBoard, Set<Move>>} remembers which moves were already tried in each
+     * visible position. The key is the position and the value is a {@code HashSet} of tried moves;
+     * {@code computeIfAbsent} gives an empty set the first time a position is seen. Because ObservableBoard and Move
+     * are records, Java generates equals() and hashCode(), so the same position and the same move are recognised
+     * again. This stops endless loops such as moving one card back and forth.
+     *
+     * <p>Implements {@link SolitaireSolver#solve}.
      *
      * <p>Calls:
      * <ul>
@@ -83,7 +91,7 @@ public final class VisibleSolver implements SolitaireSolver {
      * <p>Called by: {@code GameController.solveAndReplay()} (through SolitaireSolver).
      *
      * @param initialBoard the starting board; it is not changed
-     * @return WON, STUCK, or LIMIT_REACHED, with the moves played and the decision count
+     * @return WON, STUCK, or LIMIT_REACHED, with the moves played
      */
     @Override
     public Result solve(GameState initialBoard) {
@@ -92,22 +100,18 @@ public final class VisibleSolver implements SolitaireSolver {
         List<Move> playedMoves = new ArrayList<>();
         Map<ObservableBoard, Set<Move>> attemptedMoves = new HashMap<>();
         long startNanos = System.nanoTime();
-        int decisionCount = 0;
-        while (decisionCount < limits.maxDecisions() && playedMoves.size() < limits.maxMoves()
-                && elapsedMillis(startNanos) < limits.maxMillis()) {
+        while (playedMoves.size() < limits.maxMoves() && elapsedMillis(startNanos) < limits.maxMillis()) {
             GameState currentBoard = game.state();
             if (currentBoard.won()) {
-                return new Result(GameStatus.WON, playedMoves, decisionCount, "Auto-play won the game");
+                return new Result(GameStatus.WON, playedMoves, "Auto-play won the game");
             }
             // Moves already tried are remembered per visible position; this stops the solver from repeating a
             // loop such as moving the same card back and forth.
             ObservableBoard board = ObservableBoard.from(currentBoard);
             Set<Move> attemptedAtPosition = attemptedMoves.computeIfAbsent(board, ignored -> new HashSet<>());
             Move move = choose(board, generator.generate(currentBoard), attemptedAtPosition);
-            decisionCount++;
             if (move == null) {
-                return new Result(GameStatus.STUCK, playedMoves, decisionCount,
-                        "Stuck - every possible move has been tried");
+                return new Result(GameStatus.STUCK, playedMoves, "Stuck - every possible move has been tried");
             }
             attemptedAtPosition.add(move);
             if (!game.play(move)) {
@@ -116,10 +120,9 @@ public final class VisibleSolver implements SolitaireSolver {
             playedMoves.add(move);
         }
         if (game.state().won()) {
-            return new Result(GameStatus.WON, playedMoves, decisionCount, "Auto-play won the game");
+            return new Result(GameStatus.WON, playedMoves, "Auto-play won the game");
         }
-        return new Result(GameStatus.LIMIT_REACHED, playedMoves, decisionCount,
-                "Stopped - ran out of moves or time");
+        return new Result(GameStatus.LIMIT_REACHED, playedMoves, "Stopped - ran out of moves or time");
     }
 
     /**
@@ -133,6 +136,9 @@ public final class VisibleSolver implements SolitaireSolver {
      *   <li>Return the best move ({@code null} if all were skipped).</li>
      * </ol>
      *
+     * <p>Key idea: {@code attemptedMoves.contains(move)} looks the move up in a HashSet, which takes about the same
+     * time however many moves were tried, so skipping tried moves stays fast.
+     *
      * <p>Calls:
      * <ul>
      *   <li>{@code score()} - rates each untried move</li>
@@ -143,7 +149,7 @@ public final class VisibleSolver implements SolitaireSolver {
      * @param board the visible position
      * @param legalMoves all legal moves in this position
      * @param attemptedMoves the moves already tried in this visible position
-     * @return the best legal move not yet tried, or {@code null} if every legal move has been tried
+     * @return the best untried move, or {@code null}
      */
     public Move choose(ObservableBoard board, List<Move> legalMoves, Set<Move> attemptedMoves) {
         Move bestMove = null;
