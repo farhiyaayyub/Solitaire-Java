@@ -6,21 +6,26 @@ import solitaire.enums.Suit;
 import java.util.Objects;
 
 /**
- * One playing card. Its suit and rank are fixed when it is created; only its face-up flag changes during play.
+ * One playing card.
  *
- * <p>Encapsulation: the fields are private, and the face-up flag changes only through reveal() and conceal().
- * Polymorphism: it overrides toString(), equals(), and hashCode() from Object.
+ * <p>Kind: final class.
+ * <p>Purpose: it represents a single card on the board; every pile, the deck, and the solver work with Card objects.
+ * <p>Data: a Suit and a Rank as final enum fields (fixed for the card's life, and an enum allows only valid values),
+ * plus a boolean faceUp, the only thing that changes during play.
+ * <p>OOP: Encapsulation - the fields are private, and faceUp changes only through reveal() and conceal().
+ * Polymorphism - it overrides toString(), equals(), and hashCode() from Object.
  *
  * @author Farhiya Ayyub
  */
 public final class Card {
-    // faceUp starts false, so every new card is face down.
     private final Suit suit;
     private final Rank rank;
     private boolean faceUp;
 
     /**
      * Creates a face-down card.
+     *
+     * <p>Called by: CardFileLoader.parseCard(), Deck(), SolvableDealProvider.ascendingDrawOrder(), copy().
      *
      * @param suit the card's suit
      * @param rank the card's rank
@@ -31,102 +36,78 @@ public final class Card {
         this.rank = Objects.requireNonNull(rank);
     }
 
-    /**
-     * Returns the suit, which never changes.
-     *
-     * <p>Called by: {@code FoundationPile.accepts()}, {@code ObservableBoard.observe()}.
-     *
-     * @return the suit, which never changes
-     */
+    /** {@return the suit} Called by: FoundationPile.accepts(), ObservableBoard.observe(). */
     public Suit suit() {
         return suit;
     }
 
     /**
-     * Returns the rank, which never changes.
+     * {@return the rank}
      *
-     * <p>Called by: {@code FoundationPile.accepts()}, {@code TableauPile.accepts()}, {@code TableauPile.fitsBelow()},
-     * {@code ObservableBoard.observe()}.
-     *
-     * @return the rank, which never changes
+     * <p>Called by: FoundationPile.accepts(), TableauPile.accepts(), TableauPile.fitsBelow(), ObservableBoard.observe().
      */
     public Rank rank() {
         return rank;
     }
 
     /**
-     * Returns {@code true} if the card is face up (visible to the player).
+     * {@return {@code true} if the card is face up (visible to the player)}
      *
-     * <p>Called by: {@code ConsoleRenderer.showCard()}, {@code FoundationPile.accepts()},
-     * {@code TableauPile.accepts()}, {@code TableauPile.isValidSequence()}, {@code TableauPile.isOrderedSequence()},
-     * {@code ObservableBoard.observe()}.
-     *
-     * @return {@code true} if face up
+     * <p>Called by: ConsoleRenderer.showCard(), FoundationPile.accepts(), TableauPile.accepts(),
+     * TableauPile.isValidSequence(), TableauPile.isOrderedSequence(), ObservableBoard.observe().
      */
     public boolean isFaceUp() {
         return faceUp;
     }
 
-    /**
-     * Returns {@code true} for Hearts and Diamonds; the color comes from the suit.
-     *
-     * <p>Called by: {@code ConsoleRenderer.showCard()}, {@code TableauPile.fitsBelow()}.
-     *
-     * @return {@code true} for Hearts and Diamonds
-     */
+    /** {@return {@code true} for Hearts and Diamonds} Called by: ConsoleRenderer.showCard(), TableauPile.fitsBelow(). */
     public boolean isRed() {
         return suit.isRed();
     }
 
     /**
-     * Turns this card face up; has no effect if it is already face up.
+     * Turns this card face up; does nothing if it is already face up.
      *
-     * <p>Called by: {@code TableauPile.revealTop()}, {@code WastePile.receiveDrawn()}.
+     * <p>Called by: TableauPile.revealTop(), WastePile.receiveDrawn().
      */
     public void reveal() {
         faceUp = true;
     }
 
     /**
-     * Turns this card face down; has no effect if it is already face down.
+     * Turns this card face down; does nothing if it is already face down.
      *
-     * <p>Called by: {@code StockPile.StockPile()}, {@code StockPile.recycle()}, {@code TableauPile.TableauPile()}.
+     * <p>Called by: StockPile(List), StockPile.recycle(), TableauPile(List).
      */
     public void conceal() {
         faceUp = false;
     }
 
     /**
-     * Returns a number from 0 to 51 that identifies the card: 13 x suit position + (rank value - 1). For example, the
-     * Ace of Hearts is 0 and the King of Spades is 51.
+     * {@return a unique number from 0 to 51: 13 x suit position + (rank value - 1)} So the Ace of Hearts is 0 and the
+     * King of Spades is 51.
      *
-     * <p>Called by: {@link #hashCode}.
-     *
-     * @return a number from 0 to 51
+     * <p>Called by: hashCode().
      */
     public int id() {
         return suit.ordinal() * Rank.values().length + (rank.value() - 1);
     }
 
     /**
-     * Returns the code used in card files, such as H-A or S-10. Face-down cards return their real code too.
+     * {@return the code used in card files, such as H-A or S-10} Face-down cards return their real code too.
      *
-     * <p>Called by: {@link #toString}, {@link Deck#Deck}.
-     *
-     * @return the code used in card files, such as H-A or S-10
+     * <p>Called by: toString(), Deck(List).
      */
     public String code() {
         return suit.code() + "-" + rank.symbol();
     }
 
     /**
-     * Returns a new Card with the same suit, rank, and face-up flag. Turning the copy over does not affect this card,
-     * which is why board copies use it.
+     * {@return a new Card with the same suit, rank, and face-up flag} Turning the copy over does not affect this card,
+     * which is why board copies and read-only views use it.
      *
-     * <p>Called by: {@link Deck#Deck}, {@link Deck#drawOrder}, {@code CardPile.cards()},
-     * {@code CardPile.copyCardsInto()}, {@code TableauPile.sequenceStart()}.
-     *
-     * @return an independent copy of this card
+     * <p>Called by: Deck(List), Deck.drawOrder(), CardPile.get(), CardPile.cards(), CardPile.top(),
+     * CardPile.copyCardsInto(), TableauPile.sequenceStart().
      */
     public Card copy() {
         Card cardCopy = new Card(suit, rank);
@@ -135,14 +116,10 @@ public final class Card {
     }
 
     /**
-     * Returns the board text: the code in brackets, such as [H-A], when face up, or [XX] when face down, so printing a
+     * {@return the board text: the code in brackets, such as [H-A], when face up, or [XX] when face down} So printing a
      * card can never reveal a hidden card.
      *
-     * <p>Overrides {@code Object.toString()}.
-     *
-     * <p>Called by: {@code ConsoleRenderer.describeMove()}, {@code ConsoleRenderer.showCard()}.
-     *
-     * @return "[H-A]" when face up, "[XX]" when face down
+     * <p>Called by: ConsoleRenderer.describeMove(), ConsoleRenderer.showCard().
      */
     @Override
     public String toString() {
@@ -150,15 +127,12 @@ public final class Card {
     }
 
     /**
-     * Returns {@code true} if the other object is a Card with the same suit and rank. The face-up flag is ignored, so a
-     * card equals its own copy whether it is face up or face down.
+     * {@return {@code true} if the other object is a Card with the same suit and rank} The face-up flag is ignored, so
+     * a card equals its own copy whether it is face up or face down.
      *
-     * <p>Overrides {@code Object.equals()}.
-     *
-     * <p>Called by: Java's HashSet and HashMap, for example when Deck and CardFileLoader check for duplicate cards.
+     * <p>Called by: HashSet, in Deck(List), Deck.verify(), CardFileLoader.load(), and GameState.verify().
      *
      * @param other the object to compare with
-     * @return {@code true} if the other object is a Card with the same suit and rank
      */
     @Override
     public boolean equals(Object other) {
@@ -166,13 +140,9 @@ public final class Card {
     }
 
     /**
-     * Returns id(), so equal cards have equal hashes. This lets HashSet find duplicate cards.
+     * {@return id(), so equal cards have equal hashes, as equals() requires} This lets HashSet find duplicate cards.
      *
-     * <p>Overrides {@code Object.hashCode()}; it must agree with equals().
-     *
-     * <p>Called by: Java's HashSet and HashMap, together with equals().
-     *
-     * @return id(), so equal cards have equal hashes
+     * <p>Called by: HashSet, together with equals().
      */
     @Override
     public int hashCode() {

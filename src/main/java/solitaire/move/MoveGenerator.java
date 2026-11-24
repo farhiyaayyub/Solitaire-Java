@@ -8,11 +8,13 @@ import solitaire.enums.Suit;
 import solitaire.game.GameState;
 
 /**
- * Lists every legal move on a board. It builds every possible candidate move and keeps the ones MoveValidator
- * accepts, so it never needs rules of its own. The order is always the same for the same board, which keeps games
- * repeatable.
+ * Lister of all legal moves.
  *
- * <p>Abstraction: callers only call generate(); a MoveValidator checks each candidate.
+ * <p>Kind: final class, uses MoveValidator.
+ * <p>Purpose: it lists every legal move on a board, always in the same order for the same board, which keeps games
+ * repeatable. It has no rules of its own: MoveValidator checks every candidate.
+ * <p>Data: one MoveValidator; generate() returns the moves in a new ArrayList, which keeps the generation order.
+ * <p>OOP: Abstraction - callers only call generate() and never see how candidates are built.
  *
  * @author Farhiya Ayyub
  */
@@ -20,27 +22,18 @@ public final class MoveGenerator {
     private final MoveValidator validator = new MoveValidator();
 
     /**
-     * Returns all legal moves on the board, always in the same order. The board is not changed.
+     * {@return all legal moves on the board, in MoveType order}
      *
-     * <p>Algorithm: generate and test (try every possible move, keep the legal ones).
+     * <p>Algorithm: generate and test.
      * <ol>
-     *   <li>Go through every move type (in MoveType order), every source pile, and every destination pile.</li>
-     *   <li>For each combination, build the candidate move; between columns, build one for every card count.</li>
+     *   <li>Go through every move type, every source pile, and every destination pile.</li>
+     *   <li>Build a candidate move for each combination; between columns, one for every card count.</li>
      *   <li>Keep the candidate only if MoveValidator says it is legal.</li>
      * </ol>
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code sourceCount()} - how many sources to try</li>
-     *   <li>{@code destinationCount()} - how many destinations to try</li>
-     *   <li>{@code addLegalMoves()} - keeps the legal moves for each pair</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.manual()}, {@code SolvableDealProvider.create()},
-     * {@code VisibleSolver.solve()}.
+     * <p>Called by: GameController.manual(), SolvableDealProvider.create(), VisibleSolver.solve().
      *
      * @param state the board to read; it is not changed
-     * @return all legal moves on the board, always in the same order
      */
     public List<Move> generate(GameState state) {
         List<Move> legalMoves = new ArrayList<>();
@@ -55,23 +48,13 @@ public final class MoveGenerator {
     }
 
     /**
-     * Adds to legalMoves every legal move for one type, source, and destination. Between columns it tries every count
-     * from 1 to the column size; a draw uses the draw mode, or fewer cards if the stock has fewer; every other type
-     * moves exactly 1 card.
+     * Adds to legalMoves every legal move for one type, source, and destination. A draw uses the draw mode, or fewer
+     * cards if the stock has fewer.
      *
-     * <p>Key idea: only column-to-column moves try more than one card ({@code maximumCount} is the column size); every
-     * other type uses a count of 1. That is why a move of several cards to a foundation is never generated.
+     * <p>Key idea: only column-to-column moves try several counts, from 1 to the column size; every other type is
+     * tried once. That is why a move of several cards to a foundation is never generated.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link GameState#tableau()} - gets the source column</li>
-     *   <li>{@code CardPile.size()} - tries every card count up to the column size</li>
-     *   <li>{@link GameState#drawCount()} - gets the draw mode for a draw</li>
-     *   <li>{@link GameState#stock()} - draws fewer when the stock is short</li>
-     *   <li>{@link MoveValidator#isLegal} - keeps only legal moves</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #generate}.
+     * <p>Called by: generate().
      *
      * @param state the board to read
      * @param type the move type to try
@@ -92,12 +75,11 @@ public final class MoveGenerator {
     }
 
     /**
-     * Returns the number of source indexes to try: 7 columns, 4 foundations, or 1 for the stock or waste.
+     * {@return the number of source indexes to try: 7 columns, 4 foundations, or 1 for the stock or waste}
      *
-     * <p>Called by: {@link #generate}.
+     * <p>Called by: generate().
      *
      * @param type the move type
-     * @return 7, 4, or 1
      */
     private static int sourceCount(MoveType type) {
         return switch (type) {
@@ -108,12 +90,11 @@ public final class MoveGenerator {
     }
 
     /**
-     * Returns the number of destination indexes to try: 7 columns, 4 foundations, or 1 otherwise.
+     * {@return the number of destination indexes to try: 7 columns, 4 foundations, or 1 otherwise}
      *
-     * <p>Called by: {@link #generate}.
+     * <p>Called by: generate().
      *
      * @param type the move type
-     * @return 7, 4, or 1
      */
     private static int destinationCount(MoveType type) {
         return switch (type) {

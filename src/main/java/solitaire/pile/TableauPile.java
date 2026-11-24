@@ -6,29 +6,28 @@ import solitaire.enums.Rank;
 import solitaire.model.Card;
 
 /**
- * One of the seven tableau columns. Cards are built down: each card must be one rank lower and the opposite color
- * of the card under it. Whenever cards leave the column, the new top card is turned face up.
+ * One of the seven tableau columns.
  *
- * <p>Inheritance: it extends CardPile. Polymorphism: it overrides accepts(), copy(), and onTopRemoved().
+ * <p>Kind: final class, extends CardPile.
+ * <p>Purpose: it holds a column of face-down cards with face-up cards on top, built down from King to Ace in
+ * alternating colors, and it is the only pile where several cards can move at once.
+ * <p>Data: none of its own; the cards are kept in CardPile's list, whose index access lets it check and move a run
+ * of cards from the middle.
+ * <p>OOP: Inheritance - it reuses CardPile's card handling. Polymorphism - it overrides accepts(), copy(), name(),
+ * and the onTopRemoved() hook, so the new top card is turned face up automatically.
  *
  * @author Farhiya Ayyub
  */
 public final class TableauPile extends CardPile {
 
-    /** Creates an empty column; copy() fills it with copied cards. */
+    /** Creates an empty column. Called by: copy(). */
     public TableauPile() {
     }
 
     /**
-     * Creates a dealt column in list order (first card at the bottom). Every card is turned face down, then the top
-     * card is turned face up.
+     * Creates a dealt column, first card at the bottom: every card is turned face down, then the top card face up.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#conceal} - deals every card face down</li>
-     *   <li>{@link CardPile#addToTop} - stacks the dealt cards</li>
-     *   <li>{@code revealTop()} - turns the top card face up</li>
-     * </ul>
+     * <p>Called by: GameState.deal().
      *
      * @param dealtCards the cards for this column, bottom card first
      */
@@ -41,23 +40,11 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Returns {@code true} for a face-up King on an empty column, or a face-up card one rank lower and the opposite
-     * color of a face-up top card. Returns {@code false} for {@code null} or a face-down card.
+     * Accepts a face-up King on an empty column, or a face-up card one rank lower and the opposite color of a face-up
+     * top card. Returns {@code false} for {@code null} or a face-down card.
      *
-     * <p>Implements {@link CardPile#accepts}.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#isFaceUp} - only face-up cards may move</li>
-     *   <li>{@link CardPile#isEmpty} - an empty column takes only a King</li>
-     *   <li>{@link Card#rank()} - an empty column takes only a King</li>
-     *   <li>{@link CardPile#size} - finds the current top card</li>
-     *   <li>{@link CardPile#cardAt} - gets the current top card</li>
-     *   <li>{@code fitsBelow()} - checks one lower and opposite color</li>
-     * </ul>
-     *
-     * <p>Called by: {@code MoveValidator.isLegalTableauTransfer()}, {@link #addSequence},
-     * {@code MoveValidator.isLegalSingleCardMove()} (through CardPile), {@link CardPile#place} (through CardPile).
+     * <p>Called by: MoveValidator.isLegalTableauTransfer(), addSequence(), and MoveValidator.isLegalSingleCardMove()
+     * and CardPile.place() (through CardPile).
      *
      * @param card the card to check
      * @return {@code true} if the card may be placed on this column
@@ -75,13 +62,9 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Returns a new column holding copies of these cards, with the same face-up flags.
+     * {@return a new column holding copies of these cards, with the same face-up flags}
      *
-     * <p>Implements {@link CardPile#copy}.
-     *
-     * <p>Called by: {@code GameState.copy()}.
-     *
-     * @return a new column holding copies of these cards, with the same face-up flags
+     * <p>Called by: GameState.copy().
      */
     @Override
     public TableauPile copy() {
@@ -89,11 +72,21 @@ public final class TableauPile extends CardPile {
     }
 
     /**
+     * {@return the column's name, "T1" to "T7"}
+     *
+     * <p>Called by: ConsoleRenderer.describeMove() (through CardPile).
+     *
+     * @param position the column index, 0 for T1
+     */
+    @Override
+    public String name(int position) {
+        return "T" + (position + 1);
+    }
+
+    /**
      * Turns the new top card face up after cards are removed, as Klondike requires.
      *
-     * <p>Overrides {@link CardPile#onTopRemoved}, which does nothing in CardPile.
-     *
-     * <p>Called by: {@link CardPile#takeTop} (through CardPile), {@link CardPile#removeTopCards} (through CardPile).
+     * <p>Called by: CardPile.takeTop() and CardPile.removeTopCards() (through CardPile).
      */
     @Override
     protected void onTopRemoved() {
@@ -101,27 +94,15 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Returns {@code true} if the top {@code count} cards can move together.
+     * {@return {@code true} if the top {@code count} cards can move together} Returns {@code false} if count is less
+     * than 1 or larger than the column.
      *
-     * <p>Algorithm: linear scan, O(count).
-     * <ol>
-     *   <li>count must be between 1 and the column size.</li>
-     *   <li>For each of the top count cards, from the lowest up: it must be face up, and the next card must be one rank
-     *     lower and the opposite color.</li>
-     * </ol>
+     * <p>Algorithm: linear scan, O(count). From the lowest of the top count cards upward, every card must be face up,
+     * and each next card must fit below it (one rank lower, opposite color).
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#size} - checks the count fits the column</li>
-     *   <li>{@link CardPile#cardAt} - reads each card in the run</li>
-     *   <li>{@link Card#isFaceUp} - every card must be face up</li>
-     *   <li>{@code fitsBelow()} - checks each pair is in order</li>
-     * </ul>
-     *
-     * <p>Called by: {@code MoveValidator.isLegalTableauTransfer()}, {@link #removeSequence}.
+     * <p>Called by: MoveValidator.isLegalTableauTransfer(), removeSequence().
      *
      * @param count how many top cards would move
-     * @return {@code true} if the top {@code count} cards can move together
      */
     public boolean isValidSequence(int count) {
         if (count < 1 || count > size()) {
@@ -140,20 +121,12 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Returns a copy of the lowest card of the top {@code count} cards; this is the card the destination column must
+     * {@return a copy of the lowest card of the top {@code count} cards} This is the card the destination column must
      * accept.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#size} - checks the count and finds the lowest card</li>
-     *   <li>{@link CardPile#cardAt} - gets the lowest card of the run</li>
-     *   <li>{@link Card#copy} - returns a copy, not the real card</li>
-     * </ul>
-     *
-     * <p>Called by: {@code MoveValidator.isLegalTableauTransfer()}.
+     * <p>Called by: MoveValidator.isLegalTableauTransfer().
      *
      * @param count how many top cards would move
-     * @return a copy of the lowest card of the top {@code count} cards
      * @throws IllegalArgumentException if count is less than 1 or larger than the column
      */
     public Card sequenceStart(int count) {
@@ -164,16 +137,10 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Removes the top {@code count} cards and returns them bottom to top; the new top card is then turned face up by
-     * onTopRemoved().
+     * Removes the top {@code count} cards and returns them bottom card first; the new top card is then turned face up
+     * by onTopRemoved().
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #isValidSequence} - rejects an invalid run</li>
-     *   <li>{@link CardPile#removeTopCards} - removes the cards and reveals</li>
-     * </ul>
-     *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
+     * <p>Called by: SolitaireGame.applyLegalMove().
      *
      * @param count how many top cards to remove
      * @return the removed cards, bottom card first
@@ -187,16 +154,10 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Puts a sequence on top of this column.
+     * Puts a run of cards on top of this column, after checking that its first card is accepted and the run itself is
+     * in order.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #accepts} - checks the first card fits</li>
-     *   <li>{@code isOrderedSequence()} - checks the run itself is in order</li>
-     *   <li>{@link CardPile#addToTop} - adds each card</li>
-     * </ul>
-     *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
+     * <p>Called by: SolitaireGame.applyLegalMove().
      *
      * @param sequence the cards to add, bottom card first
      * @throws IllegalArgumentException if the sequence is empty, its first card is not accepted, or it is not face up
@@ -210,31 +171,24 @@ public final class TableauPile extends CardPile {
     }
 
     /**
-     * Returns {@code true} if {@code lower} can sit directly on {@code upper}: one rank lower and the opposite color.
+     * {@return {@code true} if {@code lower} can sit directly on {@code upper}: one rank lower and the opposite color}
      *
-     * <p>Called by: {@link #accepts}, {@link #isValidSequence}, {@code isOrderedSequence()}.
+     * <p>Called by: accepts(), isValidSequence(), isOrderedSequence().
      *
      * @param upper the card already in the column
      * @param lower the card that would be placed on top
-     * @return {@code true} if lower fits on upper
      */
     private static boolean fitsBelow(Card upper, Card lower) {
         return upper.rank().value() == lower.rank().value() + 1 && upper.isRed() != lower.isRed();
     }
 
     /**
-     * Returns {@code true} if every card in the sequence is face up and each card fits below the one before it.
+     * {@return {@code true} if every card in the list is face up and each fits below the one before it} Same check as
+     * isValidSequence(), but for cards that are not in a column yet.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#isFaceUp} - every card must be face up</li>
-     *   <li>{@code fitsBelow()} - checks each pair is in order</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #addSequence}.
+     * <p>Called by: addSequence().
      *
      * @param sequence the cards to check, bottom card first
-     * @return {@code true} if every card in the sequence is face up and each card fits below the one before it
      */
     private static boolean isOrderedSequence(List<Card> sequence) {
         for (int cardIndex = 0; cardIndex < sequence.size(); cardIndex++) {
@@ -249,19 +203,7 @@ public final class TableauPile extends CardPile {
         return true;
     }
 
-    /**
-     * Turns the top card face up; does nothing if the column is empty.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#isEmpty} - nothing to reveal in an empty column</li>
-     *   <li>{@link CardPile#size} - finds the top card</li>
-     *   <li>{@link CardPile#cardAt} - gets the top card</li>
-     *   <li>{@link Card#reveal} - turns it face up</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #TableauPile(List)}, {@link #onTopRemoved}.
-     */
+    /** Turns the top card face up; does nothing on an empty column. Called by: TableauPile(List), onTopRemoved(). */
     private void revealTop() {
         if (!isEmpty()) {
             cardAt(size() - 1).reveal();

@@ -11,29 +11,28 @@ import solitaire.game.SolitaireGame;
 import solitaire.model.Card;
 import solitaire.move.Move;
 import solitaire.pile.CardPile;
-import solitaire.pile.FoundationPile;
-import solitaire.pile.TableauPile;
-import solitaire.pile.WastePile;
 import solitaire.shuffle.ShuffleConfiguration;
 
 /**
- * Prints everything the player sees: the board, moves, results, and simulation reports. It only reads games and
- * boards and never changes them, so the display can be changed without affecting the rules.
+ * Console display of the game.
  *
- * <p>Abstraction: other classes call render(game) without knowing the layout. Polymorphism: topOrEmpty() works with any
- * kind of CardPile.
+ * <p>Kind: final class, uses SolitaireGame, GameState, CardPile, and ConsoleColor.
+ * <p>Purpose: prints everything the player sees: the board, moves, results, and simulation reports. It only reads
+ * games and boards and never changes them, so the display can change without affecting the rules.
+ * <p>Data: none; it only keeps the empty-slot text. renderTableau() turns the columns into a List of Lists, because
+ * it needs index access to print row by row across the seven columns.
+ * <p>OOP: Abstraction - other classes call render(game) without knowing the layout. Polymorphism - describeMove() and
+ * topOrEmpty() work with any kind of CardPile.
  *
  * @author Farhiya Ayyub
  */
 public final class ConsoleRenderer {
-    // Printed in place of the top card of an empty pile.
     private static final String EMPTY_SLOT = "[     ]";
 
     /**
      * Prints the title after a blank line, without color.
      *
-     * <p>Called by: {@code GameController.shuffleAndPlay()}, {@code GameController.playFromMenu()},
-     * {@link #simulationStarted}.
+     * <p>Called by: GameController.shuffleAndPlay(), GameController.playFromMenu(), simulationStarted().
      *
      * @param title the title text
      */
@@ -44,8 +43,7 @@ public final class ConsoleRenderer {
     /**
      * Prints the title after a blank line, indented and in cyan.
      *
-     * <p>Called by: {@link ConsoleInput#selectMove}, {@link #render}, {@link #simulationSummary},
-     * {@code renderTableau()}.
+     * <p>Called by: render(), showMoves(), simulationSummary(), renderTableau().
      *
      * @param title the title text
      */
@@ -54,30 +52,12 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Prints the whole board from a copy of the game's state: the draw mode, the stock (always as [XX]) and waste top
-     * card with their sizes, the top card of each foundation, the seven columns, a legend, and finally the move count
-     * and status line.
+     * Prints the whole board from a copy of the game's state: the draw mode, the stock (always shown as [XX]) and the
+     * waste top card with their sizes, the top card of each foundation, the seven columns, a legend, and the move
+     * count and status.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link SolitaireGame#state()} - gets a copy of the board to print</li>
-     *   <li>{@link #section} - prints each section title</li>
-     *   <li>{@link GameState#drawCount()} - prints Draw 1 or Draw 3</li>
-     *   <li>{@link GameState#stock()} - gets the stock</li>
-     *   <li>{@link CardPile#isEmpty} - shows an empty slot for an empty stock</li>
-     *   <li>{@link CardPile#size} - prints how many cards each pile has</li>
-     *   <li>{@link GameState#waste()} - gets the waste</li>
-     *   <li>{@code topOrEmpty()} - shows the top waste and foundation cards</li>
-     *   <li>{@link Suit#symbol()} - prints the suit symbol above each foundation</li>
-     *   <li>{@link GameState#foundation} - gets each foundation</li>
-     *   <li>{@code renderTableau()} - prints the seven columns</li>
-     *   <li>{@link SolitaireGame#moves()} - gets the move count</li>
-     *   <li>{@link SolitaireGame#status()} - gets the game status</li>
-     *   <li>{@link #statusText} - turns the status into words</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.automatic()}, {@code GameController.guaranteed()},
-     * {@code GameController.manual()}, {@code GameController.replay()}.
+     * <p>Called by: GameController.playShuffled(), GameController.guaranteed(), GameController.manual(),
+     * GameController.replay().
      *
      * @param game the game to print
      */
@@ -104,12 +84,11 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Returns the status line text, such as "Won - all 52 cards completed".
+     * {@return the status in words, such as "Won - all 52 cards completed"}
      *
-     * <p>Called by: {@link #render}, {@link #simulationGame}.
+     * <p>Called by: render(), simulationGame().
      *
      * @param status the status to describe
-     * @return the status in words
      */
     public String statusText(GameStatus status) {
         return switch (status) {
@@ -121,29 +100,15 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Returns the move as a sentence that names the card being moved, read from the board before the move is played.
+     * {@return the move as a sentence that names the card being moved, read from the board before the move is played}
      * Examples: "Move [C-A] from T1 to the clubs foundation.", "Move [H-5] and the 2 cards on it from T3 to T6, onto
      * [S-6]." A move to an empty column ends with "(empty)". Draw and recycle name no card, because the stock cards are
      * still face down.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code cardCount()} - writes "1 card" or "N cards"</li>
-     *   <li>{@link GameState#sourcePile} - finds the pile the cards leave</li>
-     *   <li>{@link GameState#destinationPile} - finds the pile they go to</li>
-     *   <li>{@link CardPile#size} - finds the position of the lowest moving card</li>
-     *   <li>{@link CardPile#get} - gets the lowest card being moved</li>
-     *   <li>{@link Card#toString} - writes the card as [H-A]</li>
-     *   <li>{@link CardPile#isEmpty} - writes "(empty)" for an empty column</li>
-     *   <li>{@link CardPile#top} - names the card the move lands on</li>
-     *   <li>{@code pileName()} - writes T1 to T7, "the waste", or the foundation</li>
-     * </ul>
-     *
-     * <p>Called by: {@link ConsoleInput#selectMove}, {@link #nextMove}.
+     * <p>Called by: showMoves(), nextMove().
      *
      * @param move the move to describe
      * @param board the board before the move is played
-     * @return the move as a sentence that names the card being moved, read from the board before the move is played
      */
     public String describeMove(Move move, GameState board) {
         if (move.type() == MoveType.DRAW) {
@@ -158,37 +123,35 @@ public final class ConsoleRenderer {
         Card moving = from.get(from.size() - move.count());
         String cards = move.count() == 1 ? moving.toString()
                 : moving + " and the " + cardCount(move.count() - 1) + " on it";
-        String landing = to instanceof TableauPile ? (to.isEmpty() ? " (empty)" : ", onto " + to.top()) : "";
-        return "Move " + cards + " from " + pileName(from, move.source()) + " to "
-                + pileName(to, move.destination()) + landing + ".";
+        String landing = move.type().endsOnTableau() ? (to.isEmpty() ? " (empty)" : ", onto " + to.top()) : "";
+        // name() is the method of the actual pile (polymorphism), so no check of the pile's class is needed.
+        return "Move " + cards + " from " + from.name(move.source()) + " to " + to.name(move.destination())
+                + landing + ".";
     }
 
     /**
-     * Returns how a pile is named in a move sentence: "T1" to "T7" for a column (index + 1), "the waste", or "the clubs
-     * foundation".
+     * Prints the LEGAL MOVES title and the moves numbered from 1, or a message if there are none.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code suitName()} - writes the foundation's suit</li>
-     * </ul>
+     * <p>Called by: GameController.manual().
      *
-     * <p>Called by: {@link #describeMove}.
-     *
-     * @param pile the pile to name
-     * @param index the column or foundation index from the move
-     * @return the pile's name for a move sentence
+     * @param moves the legal moves, in the order the player will number them
+     * @param board the current board, used to name the cards in each move
      */
-    private static String pileName(CardPile pile, int index) {
-        if (pile instanceof FoundationPile) {
-            return "the " + suitName(index) + " foundation";
+    public void showMoves(List<Move> moves, GameState board) {
+        section("LEGAL MOVES");
+        if (moves.isEmpty()) {
+            System.out.println("  No legal moves available. Game ended.");
+            return;
         }
-        return pile instanceof WastePile ? "the waste" : "T" + (index + 1);
+        for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++) {
+            System.out.printf("  [%2d] %s%n", moveIndex + 1, describeMove(moves.get(moveIndex), board));
+        }
     }
 
     /**
      * Prints "Shuffle: " followed by the strategy's name, such as Random or In Faro.
      *
-     * <p>Called by: {@code GameController.automatic()}, {@code GameController.simulate()}.
+     * <p>Called by: GameController.playShuffled(), GameController.simulate().
      *
      * @param configuration the settings whose shuffle name is printed
      */
@@ -199,7 +162,7 @@ public final class ConsoleRenderer {
     /**
      * Prints "Playing... (Draw 1)" or "Playing... (Draw 3)".
      *
-     * <p>Called by: {@code GameController.automatic()}, {@code GameController.simulate()}.
+     * <p>Called by: GameController.playShuffled(), GameController.simulate().
      *
      * @param drawCount cards turned per draw: 1 or 3
      */
@@ -211,7 +174,7 @@ public final class ConsoleRenderer {
      * Prints "Next move: " and the move sentence in yellow. The board must be the one before the move is played, so the
      * sentence names the card that is about to move.
      *
-     * <p>Called by: {@code GameController.replay()}.
+     * <p>Called by: GameController.replay().
      *
      * @param move the move about to be played
      * @param board the board before the move is played
@@ -223,7 +186,7 @@ public final class ConsoleRenderer {
     /**
      * Prints "Result: " followed by the detail, such as "Auto-play won the game".
      *
-     * <p>Called by: {@code GameController.automatic()}, {@code GameController.guaranteed()}.
+     * <p>Called by: GameController.playShuffled(), GameController.guaranteed().
      *
      * @param detail the text after "Result:"
      */
@@ -231,11 +194,7 @@ public final class ConsoleRenderer {
         System.out.println("  Result: " + detail);
     }
 
-    /**
-     * Prints the heading "SOLITAIRE SIMULATION REPORT".
-     *
-     * <p>Called by: {@code GameController.simulate()}.
-     */
+    /** Prints the heading "SOLITAIRE SIMULATION REPORT". Called by: GameController.simulate(). */
     public void simulationStarted() {
         heading("SOLITAIRE SIMULATION REPORT");
     }
@@ -243,7 +202,7 @@ public final class ConsoleRenderer {
     /**
      * Prints one line for a simulated game, such as "Game 3 | Won - all 52 cards completed | Moves: 112".
      *
-     * <p>Called by: {@code GameController.simulate()}.
+     * <p>Called by: GameController.simulate().
      *
      * @param gameNumber the game number, starting at 1
      * @param status how the game ended
@@ -254,15 +213,13 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Prints the number of games won and not solved (split into limit reached and no new moves), the win rate as a
-     * percentage, and the average moves per game, each with 2 decimal places.
+     * Prints the games won and not solved (split into limit reached and no new moves), the win rate as a percentage,
+     * and the average moves per game, each with 2 decimal places.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #section} - prints the RESULTS title</li>
-     * </ul>
+     * <p>Formula: win rate = 100.0 * won / count, and average moves = moves / count. The 100.0 (a double) makes the
+     * division keep its decimals; 100 * won / count would be integer division.
      *
-     * <p>Called by: {@code GameController.simulate()}.
+     * <p>Called by: GameController.simulate().
      *
      * @param count how many games were played
      * @param won games won
@@ -283,7 +240,7 @@ public final class ConsoleRenderer {
     /**
      * Prints the elapsed time, converted from nanoseconds to seconds with 1 decimal place.
      *
-     * <p>Called by: {@code GameController.simulate()}.
+     * <p>Called by: GameController.simulate().
      *
      * @param elapsedNanos the time taken, in nanoseconds
      */
@@ -291,29 +248,18 @@ public final class ConsoleRenderer {
         System.out.printf(Locale.ROOT, "  Elapsed: %.1f seconds%n", elapsedNanos / 1_000_000_000.0);
     }
 
-    /**
-     * Prints "Thank you for playing!" when the player leaves the menu.
-     *
-     * <p>Called by: {@code GameController.shuffleAndPlay()}.
-     */
+    /** Prints "Thank you for playing!" when the player leaves the menu. Called by: GameController.shuffleAndPlay(). */
     public void showClosingMessage() {
         System.out.println("Thank you for playing!");
     }
 
     /**
-     * Prints the seven columns side by side, one card per row, from the bottom card down to the top card. Shorter
-     * columns leave blank cells; an empty column shows an empty slot in the first row.
+     * Prints the seven columns side by side, one card per row, from the bottom card down to the top card.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #section} - prints the TABLEAU title</li>
-     *   <li>{@link GameState#tableau()} - gets the seven columns</li>
-     *   <li>{@link CardPile#cards()} - gets the cards of each column</li>
-     *   <li>{@code showCard()} - shows each card, red for a red suit</li>
-     *   <li>{@code pad()} - fills blank and empty cells</li>
-     * </ul>
+     * <p>Key idea: the number of rows is the height of the tallest column; shorter columns get blank cells, and an
+     * empty column shows an empty slot in the first row so it stays visible.
      *
-     * <p>Called by: {@link #render}.
+     * <p>Called by: render().
      *
      * @param board the board whose columns are printed
      */
@@ -337,37 +283,27 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Returns the top card's text, or the empty slot if the pile is empty, followed by spaces up to width. It accepts
-     * any CardPile, so the same method is used for the waste and for every foundation.
+     * {@return the top card's text, or the empty slot if the pile is empty, followed by spaces up to width} Works for
+     * the waste and for every foundation.
      *
-     * <p>Called by: {@link #render}.
+     * <p>Called by: render().
      *
      * @param pile the pile to show
      * @param width the number of characters to fill
-     * @return the padded top card or empty slot
      */
     private static String topOrEmpty(CardPile pile, int width) {
         return pile.isEmpty() ? pad(EMPTY_SLOT, width) : showCard(pile.top(), width);
     }
 
     /**
-     * Returns the card's text followed by spaces up to width. Face-up Hearts and Diamonds are red; Clubs, Spades, and
+     * {@return the card's text followed by spaces up to width} Face-up Hearts and Diamonds are red; Clubs, Spades, and
      * face-down cards keep the terminal's normal color, so black suits stay readable on a dark background. The spaces
      * are counted from the plain text, because the invisible color codes would otherwise break the column alignment.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#toString} - gets [H-A] or [XX]</li>
-     *   <li>{@link Card#isFaceUp} - a hidden card is not colored</li>
-     *   <li>{@link Card#isRed} - picks red for Hearts and Diamonds</li>
-     *   <li>{@link ConsoleColor#paint} - applies the red color</li>
-     * </ul>
-     *
-     * <p>Called by: {@code renderTableau()}, {@code topOrEmpty()}.
+     * <p>Called by: renderTableau(), topOrEmpty().
      *
      * @param card the card to show
      * @param width the number of characters to fill
-     * @return the card's text followed by spaces up to width
      */
     private static String showCard(Card card, int width) {
         String text = card.toString();
@@ -376,39 +312,23 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * Returns the text followed by spaces up to width; text that is already longer is unchanged.
+     * {@return the text followed by spaces up to width} Text that is already longer is unchanged.
      *
-     * <p>Called by: {@code renderTableau()}, {@code topOrEmpty()}.
+     * <p>Called by: renderTableau(), topOrEmpty().
      *
      * @param text the text to pad
      * @param width the number of characters to fill
-     * @return the text followed by spaces up to width
      */
     private static String pad(String text, int width) {
         return text + " ".repeat(Math.max(0, width - text.length()));
     }
 
     /**
-     * Returns "1 card" for 1 and "N cards" for any other number.
-     *
-     * <p>Called by: {@link #describeMove}.
+     * {@return "1 card" for 1 and "N cards" for any other number} Called by: describeMove().
      *
      * @param count the number of cards
-     * @return "1 card" for 1 and "N cards" for any other number
      */
     private static String cardCount(int count) {
         return count + (count == 1 ? " card" : " cards");
-    }
-
-    /**
-     * Returns the suit name in lower case for a foundation index, for example 0 gives "hearts".
-     *
-     * <p>Called by: {@code pileName()}.
-     *
-     * @param foundationIndex the foundation index, 0 (Hearts) to 3 (Spades)
-     * @return the suit name in lower case for a foundation index, for example 0 gives "hearts"
-     */
-    private static String suitName(int foundationIndex) {
-        return Suit.values()[foundationIndex].name().toLowerCase(Locale.ROOT);
     }
 }

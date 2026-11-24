@@ -1,9 +1,12 @@
 package solitaire.io;
 
 /**
- * Text colors for the console, using ANSI escape codes. Used only for display, never by game logic.
+ * Console text colors.
  *
- * <p>Encapsulation: the escape codes are private; callers only use paint().
+ * <p>Kind: enum.
+ * <p>Purpose: colors text with ANSI escape codes. Used only for display, never by game logic.
+ * <p>Data: each constant holds its ANSI escape code as a String, plus one shared reset code.
+ * <p>OOP: Encapsulation - the escape codes are private; callers only use paint().
  *
  * @author Farhiya Ayyub
  */
@@ -15,12 +18,11 @@ public enum ConsoleColor {
     /** Used for face-up Hearts and Diamonds, and for error messages. */
     RED("\u001B[31m");
 
-    // ANSI code that returns the terminal to its normal color.
     private static final String RESET = "\u001B[0m";
     private final String escapeCode;
 
     /**
-     * Runs once for each constant above and stores its ANSI code.
+     * Stores the ANSI code of one constant.
      *
      * @param escapeCode the ANSI code that switches to this color
      */
@@ -29,13 +31,12 @@ public enum ConsoleColor {
     }
 
     /**
-     * Returns the text between this color's code and the reset code, so only that text is colored.
+     * {@return the text between this color's code and the reset code}
      *
-     * <p>Called by: {@code ConsoleInput.showError()}, {@link ConsoleRenderer#section},
-     * {@link ConsoleRenderer#nextMove}, {@code ConsoleRenderer.showCard()}, {@code SolitaireApplication.run()}.
+     * <p>Called by: ConsoleInput.showError(), ConsoleRenderer.section(), ConsoleRenderer.nextMove(),
+     * ConsoleRenderer.showCard(), SolitaireApplication.run().
      *
      * @param text the text to color
-     * @return the colored text
      */
     public String paint(String text) {
         return escapeCode + text + RESET;

@@ -6,43 +6,41 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Scanner;
 
-import solitaire.game.GameState;
 import solitaire.model.Deck;
 import solitaire.move.Move;
 import solitaire.shuffle.ShuffleConfiguration;
 import solitaire.shuffle.ShuffleType;
 
 /**
- * Asks the player every question and keeps asking until the answer is valid, so other classes only ever receive
- * valid answers. Every question accepts q to cancel, and the end of input (for example Ctrl+Z) counts as q.
+ * Keyboard questions for the player.
  *
- * <p>Encapsulation: the scanner and helpers are private; other classes only call the public question methods.
- * Composition: it uses a CardFileLoader to load decks. Both the loader and the game limit are passed in, so their
+ * <p>Kind: final class, uses CardFileLoader.
+ * <p>Purpose: asks the player every question and keeps asking until the answer is valid, so other classes only ever
+ * receive valid answers. Every question accepts q to cancel, and the end of input (for example Ctrl+Z) counts as q.
+ * <p>Data: the Scanner it reads from, the CardFileLoader, and the highest game count the menu accepts (so a typo
+ * such as 10000 cannot start a very long run).
+ * <p>OOP: Encapsulation - the scanner and helpers are private; other classes only call the question methods.
+ * Composition - it holds a CardFileLoader to load decks; the loader and the game limit are passed in, so their
  * settings come from solitaire.properties.
  *
  * @author Farhiya Ayyub
  */
 public final class ConsoleInput {
     private static final String CANCEL = "q";
-    // The two shuffle options appear in both shuffle menus (standard deck and file deck).
+    // Shared by both shuffle menus (standard deck and file deck).
     private static final String RANDOM_OPTION = "[1] Random           - mix the cards randomly";
     private static final String PERFECT_OPTION = "[2] Perfect shuffle  - split the deck in half and interleave (Faro)";
 
     private final Scanner scanner;
     private final CardFileLoader cardFileLoader;
-    // Upper limit for a simulation from the menu, so a typo such as 10000 cannot start a very long run.
     private final int maxGameCount;
-    // Unseeded, so each menu game gets a different seed.
-    private final Random seedGenerator = new Random();
 
     /**
-     * Reads all answers from the supplied scanner, loads card files with the supplied loader, and accepts at most
-     * maxGameCount games for a simulation.
+     * Creates the input reader and checks the game limit.
      *
-     * <p>Called by: {@code SolitaireApplication.getController()}.
+     * <p>Called by: SolitaireApplication.getController().
      *
      * @param scanner the source of the player's answers
      * @param cardFileLoader loads the card file the player names
@@ -60,14 +58,9 @@ public final class ConsoleInput {
     }
 
     /**
-     * Asks where the deck comes from: "1" for a standard deck, "2" for a card file, or q.
+     * Asks where the deck comes from: a standard deck or a card file.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code menu()} - shows the options and reads the choice</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.playFromMenu()}.
+     * <p>Called by: GameController.playFromMenu().
      *
      * @return "1" for a standard deck, "2" for a card file, or "q"
      */
@@ -78,17 +71,10 @@ public final class ConsoleInput {
     }
 
     /**
-     * Asks for a card file name until a valid deck loads, and returns that deck, or {@code null} if the player enters
-     * q. After a file or card error, the message is shown and the question is asked again.
+     * Asks for a card file name until a valid deck loads. After a file or card error, the reason is shown in red and
+     * the question is asked again.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code readExact()} - reads the file name, keeping its case</li>
-     *   <li>{@link CardFileLoader#load} - reads and checks the file</li>
-     *   <li>{@code showError()} - prints the file problem in red</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.playFromMenu()}.
+     * <p>Called by: GameController.playFromMenu().
      *
      * @return the loaded deck, or {@code null} if the player enters q
      */
@@ -112,17 +98,11 @@ public final class ConsoleInput {
     }
 
     /**
-     * Asks for the shuffle and returns the settings with a new random seed, or {@code null} if the player enters q. A
-     * standard deck is randomized before a Faro shuffle, otherwise every Faro game would be the same deal. A file deck
-     * keeps its own order before the Faro shuffle, and only a file deck offers "No shuffle".
+     * Asks which shuffle to use. A standard deck is randomized before a Faro shuffle, otherwise every Faro game would
+     * be the same deal. A file deck keeps its own order before the Faro shuffle, and only a file deck offers
+     * "No shuffle".
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code menu()} - shows the options and reads the choice</li>
-     *   <li>{@link ShuffleType#isFaro} - randomizes first only for Faro</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.playFromMenu()}.
+     * <p>Called by: GameController.playFromMenu().
      *
      * @param deckFromFile {@code true} if the deck was loaded from a card file
      * @return the chosen settings, or {@code null} if the player enters q
@@ -149,20 +129,15 @@ public final class ConsoleInput {
                 return null;
             }
         }
-        return new ShuffleConfiguration(type, type.isFaro() && !deckFromFile, seedGenerator.nextLong());
+        return new ShuffleConfiguration(type, type.isFaro() && !deckFromFile);
     }
 
     /**
-     * Returns the selected draw count (1 or 3), or 0 if the player cancels.
+     * Asks how many cards to turn from the stock each time.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code menu()} - shows the options and reads the choice</li>
-     * </ul>
+     * <p>Called by: GameController.playFromMenu().
      *
-     * <p>Called by: {@code GameController.playFromMenu()}.
-     *
-     * @return 1, 3, or 0 for q
+     * @return 1 or 3, or 0 if the player enters q
      */
     public int drawCount() {
         String selected = menu("How many cards to turn from the stock each time?", "13",
@@ -172,16 +147,11 @@ public final class ConsoleInput {
     }
 
     /**
-     * Returns "1" to watch one game move by move, "2" to test the win rate over many games, or "q".
+     * Asks whether to watch one game or to test the win rate over many games.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code menu()} - shows the options and reads the choice</li>
-     * </ul>
+     * <p>Called by: GameController.playFromMenu().
      *
-     * <p>Called by: {@code GameController.playFromMenu()}.
-     *
-     * @return "1", "2", or "q"
+     * @return "1" to watch one game move by move, "2" to test the win rate, or "q"
      */
     public String playMode() {
         return menu("What do you want to do?", "12",
@@ -190,20 +160,10 @@ public final class ConsoleInput {
     }
 
     /**
-     * Asks until the player enters a whole number from 1 to the maximum game count (simulation.maxGameCount, 100 by
-     * default) and returns it, or returns 0 for q.
+     * Asks how many games to simulate, until the player enters a whole number from 1 to the maximum game count.
+     * Text that is not a number and a number out of range give the same red error.
      *
-     * <p>Key idea: {@code Integer.parseInt} throws NumberFormatException for text that is not a number, which is
-     * caught; a number outside 1 to the maximum is rejected by a range check. Both print the same red error and ask
-     * again.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code read()} - reads the number typed</li>
-     *   <li>{@code showError()} - prints the problem in red</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.playFromMenu()}.
+     * <p>Called by: GameController.playFromMenu().
      *
      * @return the number of games, 1 to the maximum game count, or 0 if the player enters q
      */
@@ -226,54 +186,35 @@ public final class ConsoleInput {
     }
 
     /**
-     * Returns {@code true} if the player answers y to watching game 1 of the simulation move by move.
+     * {@return {@code true} if the player answers y to watching game 1 of the simulation move by move}
      *
-     * <p>Called by: {@code GameController.playFromMenu()}.
-     *
-     * @return {@code true} if the player answers y to watching game 1 of the simulation move by move
+     * <p>Called by: GameController.playFromMenu().
      */
     public boolean wantsToWatchSimulationGame() {
         return choice("\nWatch game 1 move by move? Type y (yes) or n (no):\n> ", "yn").equals("y");
     }
 
     /**
-     * Returns {@code true} if the player answers y to playing again; n or q returns {@code false}.
+     * {@return {@code true} if the player answers y to playing again; n or q gives {@code false}}
      *
-     * <p>Called by: {@code GameController.shuffleAndPlay()}.
-     *
-     * @return {@code true} if the player answers y to playing again
+     * <p>Called by: GameController.shuffleAndPlay().
      */
     public boolean playAgain() {
         return choice("\nPlay again? Type y (yes) or n (no):\n> ", "yn").equals("y");
     }
 
     /**
-     * Prints the legal moves numbered from 1 and returns the chosen move.
+     * Asks for the number of a move that ConsoleRenderer.showMoves() has already listed, and returns that move. A
+     * number that is not listed is asked again.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link ConsoleRenderer#section} - prints the LEGAL MOVES title</li>
-     *   <li>{@link ConsoleRenderer#describeMove} - prints each move as a sentence</li>
-     *   <li>{@code read()} - reads the chosen number</li>
-     *   <li>{@code showError()} - prints the problem in red</li>
-     * </ul>
+     * <p>Called by: GameController.manual().
      *
-     * <p>Called by: {@code GameController.manual()}.
-     *
-     * @param moves the legal moves to choose from
-     * @param board the current board, used to name the cards in each move
-     * @param renderer prints the move list
-     * @return {@code null} if there are no legal moves or the player enters q; asks again for a number that is not
-     *     listed
+     * @param moves the listed moves, in the order they were numbered
+     * @return the chosen move, or {@code null} if there are no moves or the player enters q
      */
-    public Move selectMove(List<Move> moves, GameState board, ConsoleRenderer renderer) {
-        renderer.section("LEGAL MOVES");
+    public Move selectMove(List<Move> moves) {
         if (moves.isEmpty()) {
-            System.out.println("  No legal moves available. Game ended.");
             return null;
-        }
-        for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++) {
-            System.out.printf("  [%2d] %s%n", moveIndex + 1, renderer.describeMove(moves.get(moveIndex), board));
         }
         while (true) {
             String input = read("\nChoose a move number, or q to exit:\n> ");
@@ -281,6 +222,7 @@ public final class ConsoleInput {
                 return null;
             }
             try {
+                // The player counts from 1; the list counts from 0.
                 int selectedIndex = Integer.parseInt(input) - 1;
                 if (selectedIndex >= 0 && selectedIndex < moves.size()) {
                     return moves.get(selectedIndex);
@@ -295,12 +237,7 @@ public final class ConsoleInput {
     /**
      * Shows a titled menu with one option per line plus [q] Exit, and returns the player's valid choice.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code choice()} - repeats until the answer is valid</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #deckSource}, {@link #shuffleConfiguration}, {@link #drawCount}, {@link #playMode}.
+     * <p>Called by: deckSource(), shuffleConfiguration(), drawCount(), playMode().
      *
      * @param title the title text
      * @param allowedChoices the option numbers that are valid answers, such as "12"
@@ -319,16 +256,10 @@ public final class ConsoleInput {
     /**
      * Asks until the answer is q or exactly one of the characters in allowedChoices, and returns it.
      *
-     * <p>Key idea: a {@code while (true)} loop asks again until the answer is valid. An answer is valid when it is q or
-     * exactly one character found in allowedChoices; anything else prints a red error through showError().
+     * <p>Key idea: a {@code while (true)} loop that only returns on a valid answer; any other answer prints a red error
+     * and the loop asks again. All menus and yes/no questions share this one loop.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code read()} - reads one answer</li>
-     *   <li>{@code showError()} - prints the problem in red</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #wantsToWatchSimulationGame}, {@link #playAgain}, {@code menu()}.
+     * <p>Called by: menu(), wantsToWatchSimulationGame(), playAgain().
      *
      * @param prompt the question to print
      * @param allowedChoices the single characters that are valid answers, such as "12"
@@ -346,10 +277,10 @@ public final class ConsoleInput {
     }
 
     /**
-     * Prints an input error indented and in red, so it stands out from the menus and prompts. Every message about a
-     * wrong answer goes through here, so all errors look the same.
+     * Prints an input error indented and in red, so all wrong-answer messages look the same and stand out from the
+     * menus.
      *
-     * <p>Called by: {@link #loadDeck}, {@link #gameCount}, {@link #selectMove}, {@code choice()}.
+     * <p>Called by: loadDeck(), gameCount(), selectMove(), choice().
      *
      * @param message the error text
      */
@@ -358,24 +289,24 @@ public final class ConsoleInput {
     }
 
     /**
-     * Prints the prompt and returns the answer trimmed and in lower case, so "Q" and "q" are the same.
+     * Prints the prompt and reads one answer in lower case, so "Q" and "q" are the same.
      *
-     * <p>Called by: {@link #gameCount}, {@link #selectMove}, {@code choice()}.
+     * <p>Called by: gameCount(), selectMove(), choice().
      *
      * @param prompt the question to print
-     * @return q if input has ended
+     * @return the answer, trimmed and in lower case, or q if input has ended
      */
     private String read(String prompt) {
         return readExact(prompt).toLowerCase(Locale.ROOT);
     }
 
     /**
-     * Prints the prompt and returns the answer trimmed, keeping its case because file names may need it.
+     * Prints the prompt and reads one answer, keeping its case because file names may need it.
      *
-     * <p>Called by: {@link #loadDeck}, {@code read()}.
+     * <p>Called by: loadDeck(), read().
      *
      * @param prompt the question to print
-     * @return q if input has ended
+     * @return the answer, trimmed, or q if input has ended
      */
     private String readExact(String prompt) {
         System.out.print(prompt);

@@ -6,28 +6,27 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * A perfect Faro shuffle: the deck is cut into two equal halves, and the halves are interleaved one card at a time.
- * The In and Out versions differ only in which half gives the first card, so that is the only method they write.
+ * A perfect Faro shuffle (Template Method pattern: shuffle() asks subclasses for startsWithSecondHalf()).
  *
- * <p>Inheritance: the interleaving code is shared by both versions. Polymorphism: each subclass overrides
- * startsWithSecondHalf().
+ * <p>Kind: abstract class, implements ShuffleStrategy; extended by InFaroShuffle and OutFaroShuffle.
+ * <p>Purpose: it cuts the deck into two equal halves and interleaves them one card at a time. The In and Out versions
+ * differ only in which half gives the first card.
+ * <p>Data: none; it only rearranges the list it is given.
+ * <p>OOP: Inheritance - both versions reuse the interleaving code. Abstraction - startsWithSecondHalf() is abstract.
+ * Polymorphism - shuffle() runs the startsWithSecondHalf() of the actual subclass.
  *
  * @author Farhiya Ayyub
  */
 public abstract class FaroShuffle implements ShuffleStrategy {
     /**
-     * Returns {@code true} if the first card comes from the second half (cards 27 to 52).
+     * {@return {@code true} if the first card comes from the second half (cards 27 to 52)}
      *
-     * <p>Abstract: implemented by {@link InFaroShuffle} ({@code true}) and {@link OutFaroShuffle} ({@code false}).
-     *
-     * <p>Called by: {@link #shuffle}.
-     *
-     * @return {@code true} if the second half goes first
+     * <p>Called by: shuffle().
      */
     protected abstract boolean startsWithSecondHalf();
 
     /**
-     * Returns the perfectly interleaved deck. The seed is ignored because a perfect shuffle is not random.
+     * {@return the perfectly interleaved cards} It is not random: the same input always gives the same output.
      *
      * <p>Algorithm: perfect interleave, O(n).
      * <ol>
@@ -36,22 +35,13 @@ public abstract class FaroShuffle implements ShuffleStrategy {
      *   <li>In-Faro takes from the second half first; Out-Faro from the first half.</li>
      * </ol>
      *
-     * <p>Implements {@link ShuffleStrategy#shuffle}; InFaroShuffle and OutFaroShuffle inherit it.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #startsWithSecondHalf} - In or Out decides the first half</li>
-     * </ul>
-     *
-     * <p>Called by: {@link ShuffleConfiguration#prepareDeck} (through ShuffleStrategy).
+     * <p>Called by: ShuffleConfiguration.prepareDeck(Deck) (through ShuffleStrategy).
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
-     * @param seed not used; a perfect shuffle is not random
-     * @return the perfectly interleaved deck
      * @throws IllegalArgumentException for an odd number of cards, since the halves would not be equal
      */
     @Override
-    public List<Card> shuffle(List<Card> cards, long seed) {
+    public List<Card> shuffle(List<Card> cards) {
         if (cards.size() % 2 != 0) {
             throw new IllegalArgumentException("A Faro shuffle requires an even number of cards");
         }

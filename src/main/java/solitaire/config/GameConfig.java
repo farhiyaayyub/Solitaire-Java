@@ -12,39 +12,37 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * The settings that can change without rebuilding the program: the solver limits, the simulation defaults, and the
- * folder where card files are looked up. No setting value is written in the Java code. The defaults come from
- * {@code default.properties}, which is packaged with the program, and any value in {@code solitaire.properties} (in
- * the folder the program is started from) replaces its default.
+ * Program settings loaded from properties files.
  *
- * <p>It is a record, so the settings cannot change after they are loaded. Encapsulation: every value is checked
- * when the record is created, so the rest of the program only ever receives valid settings.
+ * <p>Kind: record.
+ * <p>Purpose: holds the values that can change without rebuilding the program: the solver limits, the simulation
+ * defaults, and the card-files folder. The defaults come from {@code default.properties} (packaged with the program),
+ * and any value in {@code solitaire.properties} (in the start folder) replaces its default.
+ * <p>Data: the five record fields below. load() uses a Properties object with the defaults, overridden by the
+ * player's file, and a Set of the names the player's file sets, so an error can say which file a bad value came from.
+ * <p>OOP: Encapsulation - a record cannot change after it is created, and every value is checked in the constructor,
+ * so the rest of the program only ever receives valid settings.
  *
  * @param maxMoves         the most moves the solver may play in one game
  * @param maxMillis        the most time the solver may use for one game, in milliseconds
  * @param defaultGameCount games played by {@code simulate} and {@code compare} when no count is given
  * @param maxGameCount     the highest game count the menu accepts
- * @param defaultSeed      the seed used by {@code random}, {@code simulate}, {@code compare}, and {@code manual} when
- *                         no seed is given
- * @param cardFilesFolder      the folder searched when the player types only a card file name, such as input.txt
+ * @param cardFilesFolder  the folder searched when the player types only a card file name, such as input.txt
  * @author Farhiya Ayyub
  */
 public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int maxGameCount,
-                         long defaultSeed, Path cardFilesFolder) {
+                         Path cardFilesFolder) {
 
     /** The settings file the player edits, read from the folder the program is started from. */
     public static final Path DEFAULT_FILE = Path.of("solitaire.properties");
 
-    // The default settings, packaged with the program (src/main/resources). They also define which names exist.
+    // The packaged defaults also define which setting names exist, so a misspelled name can be rejected.
     private static final String DEFAULTS_RESOURCE = "/default.properties";
 
     /**
-     * Checks every value when the record is created.
+     * Rejects a missing card-files folder and any limit or game count below 1.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code requirePositive()} - rejects a limit or count below 1</li>
-     * </ul>
+     * <p>Called by: load().
      *
      * @throws NullPointerException if cardFilesFolder is {@code null}
      * @throws IllegalArgumentException if a limit or game count is less than 1
@@ -58,32 +56,25 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
     }
 
     /**
-     * Reads the default settings, replaces them with the values in the settings file, checks them, and returns them.
-     * If the settings file does not exist, the defaults are used, so the program also runs without it.
+     * Reads and checks the settings. If the settings file does not exist, the defaults are used, so the program also
+     * runs without it.
      *
      * <p>Algorithm: defaults first, then the player's values on top.
      * <ol>
-     *   <li>Read {@code default.properties} from the program; every setting and its default is there.</li>
-     *   <li>If the settings file exists, read it as {@code name=value} lines (lines starting with # are comments).</li>
-     *   <li>Reject any name in the settings file that is not in the defaults, so a misspelled name is reported.</li>
+     *   <li>Read {@code default.properties}; every setting and its default is there.</li>
+     *   <li>If the settings file exists, read its {@code name=value} lines (# starts a comment).</li>
+     *   <li>Reject any name that is not in the defaults, so a misspelled name is reported.</li>
      *   <li>Let every value in the settings file replace its default.</li>
-     *   <li>Check that the card-files folder exists, convert the numbers, and create the record (which checks
-     *     them).</li>
+     *   <li>Check that the card-files folder exists, convert the numbers, and create the record.</li>
      * </ol>
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code readDefaults()} - reads default.properties from the program</li>
-     *   <li>{@code readInt()} / {@code readLong()} - convert each value to a number</li>
-     * </ul>
-     *
-     * <p>Called by: {@code SolitaireApplication.run()}.
+     * <p>Called by: SolitaireApplication.run().
      *
      * @param file the settings file to read
      * @return the settings, with the defaults for anything the file leaves out
      * @throws IOException if a file exists but cannot be read
      * @throws IllegalArgumentException for an unknown setting, a value that is not a whole number, a value below 1,
-     *     or a card-files folder that does not exist; the message names the file and the setting
+     *     a number too large for its setting, or a card-files folder that does not exist; the message names the file and the setting
      */
     public static GameConfig load(Path file) throws IOException {
         Properties settings = readDefaults();
@@ -99,7 +90,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
             }
         }
         settings.putAll(overrides);
-        // Names an error after the file the value came from: the player's file or the packaged defaults.
+        // Lets an error name the file the value came from: the player's file or the packaged defaults.
         Set<String> fromFile = overrides.stringPropertyNames();
         Path cardFilesFolder = Path.of(settings.getProperty("cardFiles.folder").trim());
         if (!Files.isDirectory(cardFilesFolder)) {
@@ -110,10 +101,8 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
         long maxMillis = readLong(settings, file, fromFile, "solver.maxMillis");
         int defaultGameCount = readInt(settings, file, fromFile, "simulation.defaultGameCount");
         int maxGameCount = readInt(settings, file, fromFile, "simulation.maxGameCount");
-        long defaultSeed = readLong(settings, file, fromFile, "simulation.defaultSeed");
         try {
-            return new GameConfig(maxMoves, maxMillis, defaultGameCount, maxGameCount, defaultSeed,
-                    cardFilesFolder);
+            return new GameConfig(maxMoves, maxMillis, defaultGameCount, maxGameCount, cardFilesFolder);
         } catch (IllegalArgumentException exception) {
             // The record names the setting; this adds the file it came from.
             String name = exception.getMessage().split(" ")[0];
@@ -122,11 +111,10 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
     }
 
     /**
-     * Reads {@code default.properties} from the program.
+     * {@return every setting with its default value, read from {@code default.properties} inside the program}
      *
-     * <p>Called by: {@link #load}.
+     * <p>Called by: load().
      *
-     * @return every setting with its default value
      * @throws IOException if the file is packaged but cannot be read
      * @throws IllegalStateException if the file is not packaged with the program
      */
@@ -144,47 +132,34 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
     }
 
     /**
-     * Returns the setting as an int.
+     * {@return the setting's value as an int}
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code source()} - names the file in the error message</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #load}.
+     * <p>Called by: load().
      *
      * @param settings the defaults with the player's values on top
      * @param file the player's settings file
      * @param fromFile the names that the player's file sets
      * @param name the setting name, such as "solver.maxMoves"
-     * @return the setting's value as an int
-     * @throws IllegalArgumentException if the value is not a whole number
+     * @throws IllegalArgumentException if the value is not a whole number or does not fit in an int
      */
     private static int readInt(Properties settings, Path file, Set<String> fromFile, String name) {
-        String value = settings.getProperty(name).trim();
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
+        long value = readLong(settings, file, fromFile, name);
+        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
             throw new IllegalArgumentException(source(file, fromFile, name) + ": " + name
-                    + " must be a whole number, but is '" + value + "'");
+                    + " is too large: " + value);
         }
+        return (int) value;
     }
 
     /**
-     * Returns the setting as a long.
+     * {@return the setting's value as a long}
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code source()} - names the file in the error message</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #load}.
+     * <p>Called by: load(), readInt().
      *
      * @param settings the defaults with the player's values on top
      * @param file the player's settings file
      * @param fromFile the names that the player's file sets
      * @param name the setting name, such as "solver.maxMillis"
-     * @return the setting's value as a long
      * @throws IllegalArgumentException if the value is not a whole number
      */
     private static long readLong(Properties settings, Path file, Set<String> fromFile, String name) {
@@ -198,14 +173,13 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
     }
 
     /**
-     * Returns the name of the file a setting's value came from, for error messages.
+     * {@return the player's file name if it sets this setting, otherwise "default.properties"}, for error messages.
      *
-     * <p>Called by: {@link #load}, {@code readInt()}, {@code readLong()}.
+     * <p>Called by: load(), readInt(), readLong().
      *
      * @param file the player's settings file
      * @param fromFile the names that the player's file sets
      * @param name the setting name
-     * @return the player's file if it sets the value, otherwise "default.properties"
      */
     private static String source(Path file, Set<String> fromFile, String name) {
         return fromFile.contains(name) ? file.toString() : "default.properties";
@@ -214,7 +188,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
     /**
      * Checks that a limit or count is at least 1.
      *
-     * <p>Called by: {@link #GameConfig}.
+     * <p>Called by: the GameConfig constructor.
      *
      * @param name the setting name, used in the error message
      * @param value the value to check

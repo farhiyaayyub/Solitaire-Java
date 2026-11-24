@@ -5,38 +5,30 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * Keeps the card order exactly as given. Used for a deck loaded from a file, where the file already sets the order.
+ * No shuffle: keeps the card order exactly as given.
  *
- * <p>Polymorphism: it is one of the ShuffleStrategy implementations.
+ * <p>Kind: final class, implements ShuffleStrategy.
+ * <p>Purpose: it is used for a deck loaded from a file, where the file already sets the order. Having it as a
+ * strategy means the deck code needs no special case for "no shuffle".
+ * <p>Data: none; it only copies the list it is given.
+ * <p>OOP: Polymorphism - it is one of the ShuffleStrategy implementations, used through the interface.
  *
  * @author Farhiya Ayyub
  */
 public final class NoShuffle implements ShuffleStrategy {
     /**
-     * Returns an unmodifiable copy of the list in the same order; the seed is ignored.
+     * {@return an unmodifiable copy of the list in the same order}
      *
-     * <p>Implements {@link ShuffleStrategy#shuffle}.
-     *
-     * <p>Called by: {@link ShuffleConfiguration#prepareDeck} (through ShuffleStrategy).
+     * <p>Called by: ShuffleConfiguration.prepareDeck(Deck) (through ShuffleStrategy).
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
-     * @param seed not used
-     * @return an unmodifiable copy of the list in the same order
      */
     @Override
-    public List<Card> shuffle(List<Card> cards, long seed) {
+    public List<Card> shuffle(List<Card> cards) {
         return List.copyOf(cards);
     }
 
-    /**
-     * Returns "None".
-     *
-     * <p>Implements {@link ShuffleStrategy#name}.
-     *
-     * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()} (through ShuffleStrategy).
-     *
-     * @return "None"
-     */
+    /** {@return "None"} Called by: ConsoleRenderer.shuffleConfiguration() (through ShuffleStrategy). */
     @Override
     public String name() {
         return "None";

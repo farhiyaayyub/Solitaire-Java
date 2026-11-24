@@ -18,11 +18,15 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Reads a deck from a text file of suit-rank codes such as H-A or S-10, separated by spaces or new lines. Every
- * problem is reported with its line number, so the player can fix the file.
+ * Card file reader.
  *
- * <p>Abstraction: callers only call load(path) and get a Deck; the parsing helpers are private. The folder searched
- * for bare file names is passed in (cardFiles.folder in solitaire.properties), so it is not fixed in the code.
+ * <p>Kind: final class, uses Deck, Card, Suit, and Rank.
+ * <p>Purpose: reads a deck from a text file of suit-rank codes such as H-A or S-10, separated by spaces or new lines,
+ * and reports every problem with its line number so the player can fix the file.
+ * <p>Data: the Path of the card-files folder. load() collects cards in an ArrayList to keep the file order and in a
+ * HashSet for a fast duplicate check.
+ * <p>OOP: Abstraction - callers only call load(path) and get a Deck; the parsing steps are private. Encapsulation -
+ * the card-files folder is passed in once (from solitaire.properties) and kept private.
  *
  * @author Farhiya Ayyub
  */
@@ -32,7 +36,7 @@ public final class CardFileLoader {
     /**
      * Creates a loader that looks for bare file names, such as input.txt, in the given folder.
      *
-     * <p>Called by: {@code SolitaireApplication.run()}, {@code SolitaireApplication.getController()}.
+     * <p>Called by: SolitaireApplication.run(), SolitaireApplication.getController().
      *
      * @param cardFilesFolder the folder searched when only a file name is given
      * @throws NullPointerException if cardFilesFolder is {@code null}
@@ -42,24 +46,18 @@ public final class CardFileLoader {
     }
 
     /**
-     * Reads the file and returns a deck in file order (the first code is drawn first).
+     * Reads the file and returns a deck in file order (the first code is drawn first). Lowercase codes are accepted.
      *
      * <p>Algorithm: line-by-line parsing.
      * <ol>
      *   <li>Find the file and read it one line at a time, counting line numbers for error messages.</li>
      *   <li>Skip blank lines and remove an invisible byte-order mark from line 1.</li>
-     *   <li>Split each line on spaces; turn each code into a card (lowercase is accepted).</li>
+     *   <li>Split each line on spaces and turn each code into a card.</li>
      *   <li>Stop at the first duplicate, found with a HashSet.</li>
      *   <li>After the last line, require exactly 52 cards.</li>
      * </ol>
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code resolveFile()} - finds the file, also in the card-files folder</li>
-     *   <li>{@code parseCard()} - turns each code into a card</li>
-     * </ul>
-     *
-     * <p>Called by: {@link ConsoleInput#loadDeck}, {@code SolitaireApplication.run()}.
+     * <p>Called by: ConsoleInput.loadDeck(), SolitaireApplication.run().
      *
      * @param filePath the card file to read; a bare file name is also looked for in the card-files folder
      * @return a deck of the 52 cards in file order
@@ -99,13 +97,12 @@ public final class CardFileLoader {
     }
 
     /**
-     * Returns the path to read. If the path does not exist and is only a file name, such as input.txt, it is looked up
-     * in the card-files folder instead (card-files by default).
+     * {@return the path to read} If the path does not exist and is only a file name, such as input.txt, it is looked up
+     * in the card-files folder instead.
      *
-     * <p>Called by: {@link #load}.
+     * <p>Called by: load().
      *
      * @param requestedPath the path the player typed
-     * @return the path to read
      * @throws IOException if the result is a folder or does not exist
      */
     private Path resolveFile(Path requestedPath) throws IOException {
@@ -125,19 +122,12 @@ public final class CardFileLoader {
     }
 
     /**
-     * Converts one code, such as H-A or h-a, into a card.
+     * {@return the card for one code, such as H-A or h-a}
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code parseSuit()} - reads the part before the hyphen</li>
-     *   <li>{@code parseRank()} - reads the part after the hyphen</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #load}.
+     * <p>Called by: load().
      *
      * @param token one card code from the file, such as "H-A"
      * @param lineNumber the line in the file, used in error messages
-     * @return the card for this code
      * @throws IllegalArgumentException unless the code is exactly one suit and one rank joined by a single hyphen
      */
     private Card parseCard(String token, int lineNumber) {
@@ -153,18 +143,12 @@ public final class CardFileLoader {
     }
 
     /**
-     * Returns the suit with this code (H, D, C, or S).
+     * {@return the suit with this code (H, D, C, or S)}
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Suit#code()} - compares with each suit letter</li>
-     * </ul>
-     *
-     * <p>Called by: {@code parseCard()}.
+     * <p>Called by: parseCard().
      *
      * @param suitCode the suit part of a card code, such as "H"
      * @param lineNumber the line in the file, used in error messages
-     * @return the matching suit
      * @throws IllegalArgumentException with the line number for any other code
      */
     private Suit parseSuit(String suitCode, int lineNumber) {
@@ -178,18 +162,12 @@ public final class CardFileLoader {
     }
 
     /**
-     * Returns the rank with this symbol (A, 2 to 10, J, Q, or K).
+     * {@return the rank with this symbol (A, 2 to 10, J, Q, or K)}
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Rank#symbol()} - compares with each rank symbol</li>
-     * </ul>
-     *
-     * <p>Called by: {@code parseCard()}.
+     * <p>Called by: parseCard().
      *
      * @param rankSymbol the rank part of a card code, such as "10"
      * @param lineNumber the line in the file, used in error messages
-     * @return the matching rank
      * @throws IllegalArgumentException with the line number for any other symbol
      */
     private Rank parseRank(String rankSymbol, int lineNumber) {

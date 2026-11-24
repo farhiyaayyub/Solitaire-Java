@@ -17,17 +17,22 @@ import solitaire.move.Move;
 import solitaire.move.MoveGenerator;
 
 /**
- * The automatic player. Before each move it looks only at the visible cards, gives every legal move a score, and
- * plays the highest-scoring move it has not already tried in the same visible position. Moves are never undone.
- * Because it cannot see hidden cards or go back, a STUCK result does not prove that the deal cannot be won.
+ * Greedy automatic player that uses only visible cards (Strategy pattern).
  *
- * <p>Polymorphism: it implements SolitaireSolver.solve(). Encapsulation: the scores and helper methods are private.
+ * <p>Kind: final class, implements SolitaireSolver.
+ * <p>Purpose: before each move it scores every legal move from the visible cards and plays the best one not yet
+ * tried in the same visible position. It never undoes a move or looks at hidden cards, so a STUCK result does not
+ * prove the deal is unwinnable.
+ * <p>Data: the Limits record, one MoveGenerator, and score constants. Per game, solve() keeps an ArrayList of played
+ * moves and a HashMap&lt;ObservableBoard, Set&lt;Move&gt;&gt; of tried moves: records give equals/hashCode, so a
+ * visible position is found again in O(1), and a HashSet answers "already tried?" in O(1).
+ * <p>OOP: Polymorphism - GameController calls it through SolitaireSolver.solve(). Encapsulation - the scores and
+ * scoring methods are private.
  *
  * @author Farhiya Ayyub
  */
 public final class VisibleSolver implements SolitaireSolver {
-    // Scores used by score(). The legal move with the highest score is played; moves with negative scores are
-    // played only when no other untried move is left.
+    // Move preferences: the highest score is played, and negative scores only when nothing else untried is left.
     private static final int DRAW_SCORE = 5;
     private static final int RECYCLE_SCORE = 1;
     private static final int FOUNDATION_RETURN_SCORE = -100;
@@ -48,7 +53,9 @@ public final class VisibleSolver implements SolitaireSolver {
     /**
      * Stores the move and time limits used for every game.
      *
-     * @param limits the move and time limits for every game
+     * <p>Called by: SolitaireApplication.getController().
+     *
+     * @param limits the limits
      * @throws NullPointerException if limits is {@code null}
      */
     public VisibleSolver(SolitaireSolver.Limits limits) {
@@ -56,39 +63,21 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Plays one game on its own copy of the board and returns how it ended, with the moves played.
+     * Plays one game on its own copy of the board.
      *
-     * <p>Algorithm: greedy search with memory. It always takes the best-looking move and never undoes one.
-     * Each turn, while the move and time limits are not reached:
+     * <p>Algorithm: greedy search with memory. While the move and time limits are not reached:
      * <ol>
      *   <li>If the board is won, return WON.</li>
      *   <li>Hide the face-down cards to get the visible position.</li>
-     *   <li>List the legal moves and pick the highest-scoring one not yet tried in this position.</li>
-     *   <li>If every move was already tried here, return STUCK.</li>
-     *   <li>Remember the move as tried in this position, then play it.</li>
+     *   <li>Pick the highest-scoring legal move not yet tried in this position; if none is left, return STUCK.</li>
+     *   <li>Remember the move as tried here, then play it.</li>
      * </ol>
-     * When a limit is reached, return WON if the last move won the game, otherwise LIMIT_REACHED.
+     * When a limit is reached, return WON if the last move won, otherwise LIMIT_REACHED.
      *
-     * <p>Key idea: a {@code HashMap<ObservableBoard, Set<Move>>} remembers which moves were already tried in each
-     * visible position. The key is the position and the value is a {@code HashSet} of tried moves;
-     * {@code computeIfAbsent} gives an empty set the first time a position is seen. Because ObservableBoard and Move
-     * are records, Java generates equals() and hashCode(), so the same position and the same move are recognised
-     * again. This stops endless loops such as moving one card back and forth.
+     * <p>Key idea: remembering the tried moves per visible position stops endless loops, such as moving one card back
+     * and forth; computeIfAbsent() creates the empty set the first time a position is seen.
      *
-     * <p>Implements {@link SolitaireSolver#solve}.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code elapsedMillis()} - checks the time limit</li>
-     *   <li>{@link SolitaireGame#state()} - gets a copy of the board</li>
-     *   <li>{@link GameState#won} - stops when all 52 cards are home</li>
-     *   <li>{@link ObservableBoard#from} - hides face-down cards</li>
-     *   <li>{@link MoveGenerator#generate} - lists the legal moves</li>
-     *   <li>{@link #choose} - picks the best untried move</li>
-     *   <li>{@link SolitaireGame#play} - plays the chosen move</li>
-     * </ul>
-     *
-     * <p>Called by: {@code GameController.solveAndReplay()} (through SolitaireSolver).
+     * <p>Called by: GameController.solveAndReplay() (through SolitaireSolver).
      *
      * @param initialBoard the starting board; it is not changed
      * @return WON, STUCK, or LIMIT_REACHED, with the moves played
@@ -105,8 +94,6 @@ public final class VisibleSolver implements SolitaireSolver {
             if (currentBoard.won()) {
                 return new Result(GameStatus.WON, playedMoves, "Auto-play won the game");
             }
-            // Moves already tried are remembered per visible position; this stops the solver from repeating a
-            // loop such as moving the same card back and forth.
             ObservableBoard board = ObservableBoard.from(currentBoard);
             Set<Move> attemptedAtPosition = attemptedMoves.computeIfAbsent(board, ignored -> new HashSet<>());
             Move move = choose(board, generator.generate(currentBoard), attemptedAtPosition);
@@ -126,32 +113,18 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Returns the best legal move not yet tried, or {@code null} if every legal move has been tried.
+     * {@return the best legal move not yet tried, or {@code null} if every legal move has been tried}
      *
-     * <p>Algorithm: find the maximum in one pass, O(number of moves).
-     * <ol>
-     *   <li>Start with no best move and the lowest possible score.</li>
-     *   <li>For each legal move: skip it if already tried; otherwise score it.</li>
-     *   <li>Keep it if its score is strictly higher than the best so far, so on a tie the earlier move stays.</li>
-     *   <li>Return the best move ({@code null} if all were skipped).</li>
-     * </ol>
+     * <p>Key idea: one pass that keeps the maximum, O(number of moves). Only a strictly higher score replaces the
+     * best, so on a tie the earlier move wins.
      *
-     * <p>Key idea: {@code attemptedMoves.contains(move)} looks the move up in a HashSet, which takes about the same
-     * time however many moves were tried, so skipping tried moves stays fast.
-     *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code score()} - rates each untried move</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #solve}.
+     * <p>Called by: solve().
      *
      * @param board the visible position
      * @param legalMoves all legal moves in this position
      * @param attemptedMoves the moves already tried in this visible position
-     * @return the best untried move, or {@code null}
      */
-    public Move choose(ObservableBoard board, List<Move> legalMoves, Set<Move> attemptedMoves) {
+    private Move choose(ObservableBoard board, List<Move> legalMoves, Set<Move> attemptedMoves) {
         Move bestMove = null;
         double bestScore = -Double.MAX_VALUE;
         for (Move move : legalMoves) {
@@ -168,20 +141,13 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Returns the score of one legal move, using only the visible board: a fixed score for draw, recycle,
-     * foundation-to-tableau, and waste-to-tableau moves, and a calculated score for the other types.
+     * {@return the score of one legal move; higher means preferred} Draw, recycle, foundation-to-tableau, and
+     * waste-to-tableau moves have a fixed score; the other types are calculated from the visible board.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code foundationScore()} - rates a waste-to-foundation move</li>
-     *   <li>{@code tableauMoveScore()} - rates a move from a column</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #choose}.
+     * <p>Called by: choose().
      *
      * @param board the visible position
      * @param move the legal move to rate
-     * @return the move's score; a higher score means the move is preferred
      */
     private double score(ObservableBoard board, Move move) {
         return switch (move.type()) {
@@ -195,28 +161,21 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Returns the score of a move that starts in a column.
+     * {@return the score of a move that starts in a column}
      *
-     * <p>Steps:
+     * <p>Algorithm: scoring a column move.
      * <ol>
-     *   <li>Find the lowest moving card. If the card under it is face down, add the reveal bonus (300) plus its
-     *     position, so columns with more hidden cards are opened first.</li>
-     *   <li>To a foundation: return that bonus plus foundationScore().</li>
-     *   <li>A whole column onto an empty column: return -200, because it changes nothing useful.</li>
-     *   <li>Otherwise: bonus + 30 if the source column becomes empty (else 20) + 0.1 per card moved.</li>
+     *   <li>If the card under the lowest moving card is face down, add the reveal bonus (300) plus its position, so
+     *     columns with more hidden cards are opened first.</li>
+     *   <li>To a foundation: that bonus plus foundationScore().</li>
+     *   <li>A whole column onto an empty column: -200, because it changes nothing useful.</li>
+     *   <li>Otherwise: the bonus + 30 if the source column becomes empty (else 20) + 0.1 per card moved.</li>
      * </ol>
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link ObservableBoard.VisibleCard#isHidden} - checks if the move uncovers a hidden card</li>
-     *   <li>{@code foundationScore()} - rates a column-to-foundation move</li>
-     * </ul>
-     *
-     * <p>Called by: {@code score()}.
+     * <p>Called by: score().
      *
      * @param board the visible position
      * @param move a legal move that starts in a column
-     * @return the score of a move that starts in a column
      */
     private double tableauMoveScore(ObservableBoard board, Move move) {
         List<ObservableBoard.VisibleCard> sourceCards = board.tableau().get(move.source());
@@ -234,28 +193,18 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Returns 500 if moving the card to its foundation is safe, otherwise 12. A safe card can never be needed again in
-     * the tableau.
+     * {@return 500 if moving the card to its foundation is safe, otherwise 12}
      *
-     * <p>Steps:
+     * <p>Key idea: safe foundation move. A card is safe when no tableau card could ever need it as a place to go:
      * <ol>
      *   <li>Aces and 2s are always safe.</li>
-     *   <li>For each other suit: the needed rank is card rank - 1 for an opposite color, rank - 2 for the same
-     *     color.</li>
-     *   <li>If any of those foundations is below its needed rank, the move is not safe.</li>
+     *   <li>Otherwise every other foundation must be at least rank - 1 (opposite color) or rank - 2 (same color).</li>
      * </ol>
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Suit#isRed} - gets each foundation's color</li>
-     *   <li>{@link ObservableBoard.VisibleCard#isRed} - gets the moving card's color</li>
-     * </ul>
-     *
-     * <p>Called by: {@code score()}, {@code tableauMoveScore()}.
+     * <p>Called by: score(), tableauMoveScore().
      *
      * @param board the visible position
      * @param card the card that would move to its foundation
-     * @return 500 if moving the card to its foundation is safe, otherwise 12
      */
     private double foundationScore(ObservableBoard board, ObservableBoard.VisibleCard card) {
         if (card.rank() <= ALWAYS_SAFE_RANK) {
@@ -272,12 +221,9 @@ public final class VisibleSolver implements SolitaireSolver {
     }
 
     /**
-     * Returns the whole milliseconds passed since startNanos.
-     *
-     * <p>Called by: {@link #solve}.
+     * {@return the milliseconds passed since startNanos, rounded down} Called by: solve().
      *
      * @param startNanos a value from {@code System.nanoTime()}
-     * @return the elapsed time in milliseconds, rounded down
      */
     private static long elapsedMillis(long startNanos) {
         return (System.nanoTime() - startNanos) / NANOS_PER_MILLISECOND;

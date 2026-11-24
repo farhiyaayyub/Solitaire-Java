@@ -9,61 +9,48 @@ import solitaire.game.GameController;
 import solitaire.io.CardFileLoader;
 import solitaire.io.ConsoleColor;
 import solitaire.io.ConsoleInput;
+import solitaire.io.ConsoleRenderer;
 import solitaire.shuffle.ShuffleConfiguration;
 import solitaire.shuffle.ShuffleType;
 import solitaire.solver.SolitaireSolver;
 import solitaire.solver.VisibleSolver;
 
 /**
- * Reads the command-line arguments, creates the main objects, runs the requested command, and converts each kind of
- * failure into an exit code. With no arguments it runs the interactive menu ("shuffle").
+ * Command-line front end that wires the program together.
  *
- * <p>All methods are static, because the class only connects the other objects and has no state of its own.
+ * <p>Kind: final class with only static methods, uses GameConfig, GameController, CardFileLoader, ConsoleInput,
+ * ConsoleRenderer, and VisibleSolver.
+ * <p>Purpose: reads the command, builds the main objects, runs the command, and turns every kind of failure into an
+ * exit code and a red error message. With no arguments it runs the interactive menu ("shuffle").
+ * <p>Data: none; it only holds the three exit-code constants (0, 1, 2) and creates the objects inside run().
+ * <p>OOP: Abstraction - the controller receives its solver as a SolitaireSolver, so another solver could be plugged
+ * in here without changing GameController. Composition - this class creates the objects and passes each one what it
+ * needs (dependency injection).
  *
  * @author Farhiya Ayyub
  */
 public final class SolitaireApplication {
-    // Exit codes. The solver limits, game counts, and seed are no longer fixed here: they come from
-    // solitaire.properties through GameConfig, so they can change without rebuilding.
     private static final int EXIT_SUCCESS = 0;
     private static final int EXIT_FAILURE = 1;
     private static final int EXIT_INVALID_INPUT = 2;
+    // Position of --compact/--verbose for the guaranteed and random commands.
+    private static final int OUTPUT_OPTION_INDEX = 1;
 
     /** Prevents objects of this class; all its methods are static. */
     private SolitaireApplication() {
     }
 
     /**
-     * Reads the settings, validates the arguments, builds the controller, and runs one command. Errors are caught here
-     * and printed in red.
+     * Loads the settings first, so a broken configuration file is reported before anything else, then checks the
+     * arguments and runs the command. A card-file error from validate is not followed by the usage text.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link GameConfig#load} - reads solitaire.properties, or uses the defaults</li>
-     *   <li>{@code validateArguments()} - rejects bad commands before any work starts</li>
-     *   <li>{@code getController()} - builds the controller with the solver limits</li>
-     *   <li>{@code intArgument()} - reads a whole-number argument or its default</li>
-     *   <li>{@code longArgument()} - reads a seed or time argument or its default</li>
-     *   <li>{@link CardFileLoader#load} - checks the card file for the validate command</li>
-     *   <li>{@link GameController#shuffleAndPlay} - runs the interactive menu</li>
-     *   <li>{@code hasCompactOption()} - checks whether only the final board is wanted</li>
-     *   <li>{@link GameController#guaranteed} - plays the known-winnable deal</li>
-     *   <li>{@link GameController#automatic} - plays one automatic game</li>
-     *   <li>{@link GameController#simulate(int, long)} - plays many games and prints a summary</li>
-     *   <li>{@link GameController#compare} - compares the three shuffle types</li>
-     *   <li>{@link GameController#manual} - lets the player choose every move</li>
-     *   <li>{@code printUsage()} - shows the list of commands</li>
-     *   <li>{@link ConsoleColor#paint} - prints each error message in red</li>
-     * </ul>
-     *
-     * <p>Called by: {@link Main#main}.
+     * <p>Called by: Main.main().
      *
      * @param args the command-line arguments; the first one is the command
      * @return 0 on success, 1 for a file or game error, or 2 for invalid input or invalid settings (including a
      *     number that cannot be parsed)
      */
     public static int run(String[] args) {
-        // The settings are read first, so a broken configuration file is reported before anything else happens.
         GameConfig config;
         try {
             config = GameConfig.load(GameConfig.DEFAULT_FILE);
@@ -87,14 +74,12 @@ public final class SolitaireApplication {
                     System.out.println("VALID: " + args[1] + " - 52 unique cards, valid suits and ranks.");
                 }
                 case "shuffle", "menu" -> controller.shuffleAndPlay();
-                case "guaranteed" -> controller.guaranteed(hasCompactOption(args, 1));
-                case "random" -> controller.automatic(new ShuffleConfiguration(ShuffleType.RANDOM, false,
-                        longArgument(args, 1, config.defaultSeed())), hasCompactOption(args, 2));
-                case "simulate" -> controller.simulate(intArgument(args, 1, config.defaultGameCount()),
-                        longArgument(args, 2, config.defaultSeed()));
-                case "compare" -> controller.compare(intArgument(args, 1, config.defaultGameCount()),
-                        longArgument(args, 2, config.defaultSeed()));
-                case "manual" -> controller.manual(config.defaultSeed());
+                case "guaranteed" -> controller.guaranteed(hasCompactOption(args));
+                case "random" -> controller.automatic(new ShuffleConfiguration(ShuffleType.RANDOM, false),
+                        hasCompactOption(args));
+                case "simulate" -> controller.simulate(intArgument(args, 1, config.defaultGameCount()));
+                case "compare" -> controller.compare(intArgument(args, 1, config.defaultGameCount()));
+                case "manual" -> controller.manual();
                 case "help", "--help" -> printUsage();
                 default -> throw new IllegalArgumentException("Unknown command: " + command);
             }
@@ -116,36 +101,29 @@ public final class SolitaireApplication {
     }
 
     /**
-     * Creates the controller and the objects it needs. The solver limits come from the settings, unless arguments 4
-     * and 5 (indexes 3 and 4) give them on the command line.
+     * Builds the controller and its parts. The solver limits come from the settings, unless arguments 3 and 4
+     * (indexes 2 and 3) give them on the command line.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@code intArgument()} / {@code longArgument()} - read a limit from the command line or the settings</li>
-     * </ul>
-     *
-     * <p>Called by: {@link #run}.
+     * <p>Called by: run().
      *
      * @param args the command-line arguments; the first one is the command
      * @param input reads the player's answers
      * @param config the settings from solitaire.properties
-     * @return a controller with a VisibleSolver and a ConsoleInput
+     * @return a controller with a VisibleSolver, a ConsoleInput, and a ConsoleRenderer
      */
     private static GameController getController(String[] args, Scanner input, GameConfig config) {
         SolitaireSolver.Limits limits = new SolitaireSolver.Limits(
-                intArgument(args, 3, config.maxMoves()),
-                longArgument(args, 4, config.maxMillis()));
-        // Each object receives what it needs from outside (dependency injection): the solver is passed in through
-        // the SolitaireSolver interface, and ConsoleInput gets its file loader and game limit from the settings.
+                intArgument(args, 2, config.maxMoves()),
+                numberArgument(args, 3, config.maxMillis(), Long.MAX_VALUE));
         ConsoleInput consoleInput = new ConsoleInput(input, new CardFileLoader(config.cardFilesFolder()),
                 config.maxGameCount());
-        return new GameController(new VisibleSolver(limits), consoleInput);
+        return new GameController(new VisibleSolver(limits), consoleInput, new ConsoleRenderer());
     }
 
     /**
-     * Checks the command and its arguments before any work starts.
+     * Checks the argument count for each command and the --compact/--verbose option, so no game starts with a typo.
      *
-     * <p>Called by: {@link #run}.
+     * <p>Called by: run().
      *
      * @param command the command name, such as "random"
      * @param args all command-line arguments, including the command
@@ -159,16 +137,15 @@ public final class SolitaireApplication {
         int maximumArguments = switch (command) {
             case "shuffle", "menu", "manual", "help", "--help" -> 1;
             case "guaranteed", "validate" -> 2;
-            case "random", "simulate", "compare" -> 5;
+            case "random", "simulate", "compare" -> 4;
             default -> throw new IllegalArgumentException("Unknown command: " + command);
         };
         if (args.length > maximumArguments) {
             throw new IllegalArgumentException("Too many arguments for " + command);
         }
-        // Position of the output option for the commands that accept one; -1 means the command has none.
+        // -1 means the command takes no output option.
         int outputOptionIndex = switch (command) {
-            case "guaranteed" -> 1;
-            case "random" -> 2;
+            case "guaranteed", "random" -> OUTPUT_OPTION_INDEX;
             default -> -1;
         };
         if (outputOptionIndex >= 0 && args.length > outputOptionIndex
@@ -178,62 +155,71 @@ public final class SolitaireApplication {
     }
 
     /**
-     * Returns {@code true} only if the argument at the index exists and is exactly --compact.
+     * {@return {@code true} only if the output option (argument index 1) exists and is exactly --compact}
      *
-     * <p>Called by: {@link #run}.
+     * <p>Called by: run().
      *
      * @param args the command-line arguments; the first one is the command
-     * @param index the position of the output option
-     * @return {@code true} only if the argument at the index exists and is exactly --compact
      */
-    private static boolean hasCompactOption(String[] args, int index) {
-        return args.length > index && args[index].equals("--compact");
+    private static boolean hasCompactOption(String[] args) {
+        return args.length > OUTPUT_OPTION_INDEX && args[OUTPUT_OPTION_INDEX].equals("--compact");
     }
 
     /**
-     * Returns the argument at the index as an int, or the default when the argument is missing.
+     * {@return the argument at the index as an int, or the default when the argument is missing}
      *
-     * <p>Called by: {@link #run}.
+     * <p>Called by: run(), getController().
      *
      * @param args the command-line arguments; the first one is the command
      * @param index the position of the argument
      * @param defaultValue the value to use when the argument is missing
-     * @return the argument, or the default
-     * @throws NumberFormatException if the argument is not a whole number
+     * @throws IllegalArgumentException if the argument is not a whole number; the message names the argument
      */
     private static int intArgument(String[] args, int index, int defaultValue) {
-        return args.length > index ? Integer.parseInt(args[index]) : defaultValue;
+        return (int) numberArgument(args, index, defaultValue, Integer.MAX_VALUE);
     }
 
     /**
-     * Returns the argument at the index as a long, or the default when the argument is missing.
+     * {@return the argument at the index as a whole number, or the default when it is missing}
      *
-     * <p>Called by: {@link #run}.
+     * <p>Key idea: Java's own parse error ("For input string: ...") is replaced by a message that names the command,
+     * the argument, and the wrong value, so the player knows what to fix.
+     *
+     * <p>Called by: intArgument(), getController().
      *
      * @param args the command-line arguments; the first one is the command
      * @param index the position of the argument
      * @param defaultValue the value to use when the argument is missing
-     * @return the argument, or the default
-     * @throws NumberFormatException if the argument is not a whole number
+     * @param maximum the largest accepted value
+     * @throws IllegalArgumentException if the argument is not a whole number or is larger than the maximum
      */
-    private static long longArgument(String[] args, int index, long defaultValue) {
-        return args.length > index ? Long.parseLong(args[index]) : defaultValue;
+    private static long numberArgument(String[] args, int index, long defaultValue, long maximum) {
+        if (args.length <= index) {
+            return defaultValue;
+        }
+        String where = args[0] + " argument " + index;
+        long value;
+        try {
+            value = Long.parseLong(args[index]);
+        } catch (NumberFormatException notANumber) {
+            throw new IllegalArgumentException(where + " must be a whole number, but is '" + args[index] + "'");
+        }
+        if (value > maximum) {
+            throw new IllegalArgumentException(where + " is too large: " + args[index]);
+        }
+        return value;
     }
 
-    /**
-     * Prints every command with its optional arguments in brackets.
-     *
-     * <p>Called by: {@link #run}.
-     */
+    /** Prints every command with its optional arguments in brackets. Called by: run(). */
     private static void printUsage() {
         System.out.println("""
                 Commands:
                   shuffle | menu        Interactive setup (standard deck or card file).
                   validate <card-file>  Check a deck file without starting a game.
                   guaranteed [--compact|--verbose]
-                  random [seed [--compact|--verbose [moves [ms]]]]
-                  simulate [count [firstSeed [moves [ms]]]]
-                  compare [count [firstSeed [moves [ms]]]]
+                  random [--compact|--verbose [moves [ms]]]
+                  simulate [count [moves [ms]]]
+                  compare [count [moves [ms]]]
                   manual
                   help""");
     }

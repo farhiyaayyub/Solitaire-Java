@@ -1,24 +1,23 @@
 package solitaire.enums;
 
 /**
- * The four card suits. Each suit has a one-letter file code, a display symbol, and a color. The declaration order
- * matters: a suit's position (ordinal 0 to 3) is also its foundation index in moves and its block in Card.id().
+ * The four card suits.
  *
- * <p>Encapsulation: each suit keeps its code, symbol, and color in private final fields.
+ * <p>Kind: enum.
+ * <p>Purpose: it gives every card its suit and color, and each suit has its own foundation. The declaration order
+ * matters: a suit's ordinal (0 to 3) is also its foundation index in moves and its block in Card.id().
+ * <p>Data: each constant stores a one-letter file code, a display symbol, and whether it is red.
+ * <p>OOP: Encapsulation - code, symbol, and color are private final fields, read through methods.
  *
  * @author Farhiya Ayyub
  */
 public enum Suit {
-    /** Hearts: code H, red. Foundation index 0. */
     HEARTS("H", "♥", true),
-    /** Diamonds: code D, red. Foundation index 1. */
     DIAMONDS("D", "♦", true),
-    /** Clubs: code C, black. Foundation index 2. */
     CLUBS("C", "♣", false),
-    /** Spades: code S, black. Foundation index 3. */
     SPADES("S", "♠", false);
 
-    /** Number of foundation piles; there is one foundation per suit, so this is 4. */
+    /** One foundation per suit, so 4. */
     public static final int FOUNDATION_COUNT = values().length;
 
     private final String code;
@@ -26,10 +25,10 @@ public enum Suit {
     private final boolean red;
 
     /**
-     * Runs once for each constant above and stores its code, symbol, and color.
+     * Runs once for each constant above.
      *
      * @param code the one-letter code used in card files
-     * @param symbol the text shown for this value
+     * @param symbol the symbol shown on screen
      * @param red {@code true} for Hearts and Diamonds
      */
     Suit(String code, String symbol, boolean red) {
@@ -38,35 +37,20 @@ public enum Suit {
         this.red = red;
     }
 
-    /**
-     * Returns the one-letter code used in card files: H, D, C, or S.
-     *
-     * <p>Called by: {@code CardFileLoader.parseSuit()}, {@code Card.code()}.
-     *
-     * @return the suit letter, such as "H"
-     */
+    /** {@return H, D, C, or S, as used in card files} Called by: CardFileLoader.parseSuit(), Card.code(). */
     public String code() {
         return code;
     }
 
-    /**
-     * Returns the symbol printed on screen: ♥, ♦, ♣, or ♠.
-     *
-     * <p>Called by: {@code ConsoleRenderer.render()}.
-     *
-     * @return the suit symbol, such as "♥"
-     */
+    /** {@return ♥, ♦, ♣, or ♠, as printed on screen} Called by: ConsoleRenderer.render(). */
     public String symbol() {
         return symbol;
     }
 
     /**
-     * Returns {@code true} for Hearts and Diamonds, {@code false} for Clubs and Spades.
+     * {@return {@code true} for Hearts and Diamonds, {@code false} for Clubs and Spades}
      *
-     * <p>Called by: {@code Card.isRed()}, {@code ObservableBoard.VisibleCard.isRed()},
-     * {@code VisibleSolver.foundationScore()}.
-     *
-     * @return {@code true} for Hearts and Diamonds, {@code false} for Clubs and Spades
+     * <p>Called by: Card.isRed(), ObservableBoard.VisibleCard.isRed(), VisibleSolver.foundationScore().
      */
     public boolean isRed() {
         return red;

@@ -3,53 +3,42 @@ package solitaire.shuffle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 import solitaire.model.Card;
 
 /**
- * Random shuffle controlled by a seed: the same seed and the same starting order always give the same result, so
- * any deal can be repeated.
+ * Random shuffle.
  *
- * <p>Polymorphism: it is one of the ShuffleStrategy implementations.
+ * <p>Kind: final class, implements ShuffleStrategy.
+ * <p>Purpose: it gives a new random order on every call, so every game is a different deal.
+ * <p>Data: none; it only rearranges the list it is given.
+ * <p>OOP: Polymorphism - it is one of the ShuffleStrategy implementations, used through the interface.
  *
  * @author Farhiya Ayyub
  */
 public final class RandomShuffle implements ShuffleStrategy {
     /**
-     * Returns the cards in a random order that depends only on the seed.
+     * {@return the cards in a new random order}
      *
      * <p>Algorithm: Fisher-Yates shuffle (inside Collections.shuffle), O(n).
      * <ol>
-     *   <li>Copy the list and create a Random from the seed.</li>
+     *   <li>Copy the list into an ArrayList.</li>
      *   <li>From the last position down to the second: swap the card with a randomly chosen card at or before it.</li>
      *   <li>Return the result as an unmodifiable list.</li>
      * </ol>
      *
-     * <p>Implements {@link ShuffleStrategy#shuffle}.
-     *
-     * <p>Called by: {@link ShuffleConfiguration#prepareDeck} (through ShuffleStrategy).
+     * <p>Called by: ShuffleConfiguration.prepareDeck(Deck) (through ShuffleStrategy).
      *
      * @param cards the cards in draw order; the first element is the first card to be drawn
-     * @param seed the seed that decides the random order
-     * @return the cards in a random order that depends only on the seed
      */
     @Override
-    public List<Card> shuffle(List<Card> cards, long seed) {
+    public List<Card> shuffle(List<Card> cards) {
         List<Card> result = new ArrayList<>(cards);
-        Collections.shuffle(result, new Random(seed));
+        Collections.shuffle(result);
         return List.copyOf(result);
     }
 
-    /**
-     * Returns "Random".
-     *
-     * <p>Implements {@link ShuffleStrategy#name}.
-     *
-     * <p>Called by: {@code ConsoleRenderer.shuffleConfiguration()} (through ShuffleStrategy).
-     *
-     * @return "Random"
-     */
+    /** {@return "Random"} Called by: ConsoleRenderer.shuffleConfiguration() (through ShuffleStrategy). */
     @Override
     public String name() {
         return "Random";

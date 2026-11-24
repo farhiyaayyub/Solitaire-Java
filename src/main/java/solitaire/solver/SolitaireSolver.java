@@ -8,11 +8,13 @@ import solitaire.game.GameState;
 import solitaire.move.Move;
 
 /**
- * What every automatic player must provide: given a starting board, return the moves it chose and how the game
- * ended. GameController depends only on this interface, so a different solver can replace VisibleSolver without
- * changing the controller.
+ * Contract for an automatic player (Strategy pattern).
  *
- * <p>Abstraction: it says what a solver does, not how. Polymorphism: any implementation can be passed to
+ * <p>Kind: interface, implemented by VisibleSolver; contains the records Limits and Result.
+ * <p>Purpose: it says what every solver must do: take a starting board and return the moves it chose and how the
+ * game ended. GameController depends only on this interface, so another solver can replace VisibleSolver.
+ * <p>Data: none; it only defines solve() and the two records that carry its input limits and output.
+ * <p>OOP: Abstraction - it says what a solver does, not how. Polymorphism - any implementation can be passed to
  * GameController.
  *
  * @author Farhiya Ayyub
@@ -20,12 +22,10 @@ import solitaire.move.Move;
 public interface SolitaireSolver {
 
     /**
-     * Plays a game starting from the board and returns the result. The board passed in must not be changed; the
-     * returned moves must be legal when replayed from that board in order.
+     * Plays a game from the board and returns the result. The board passed in must not be changed, and the returned
+     * moves must be legal when replayed from it in order.
      *
-     * <p>Implemented by {@link VisibleSolver}.
-     *
-     * <p>Called by: {@code GameController.solveAndReplay()}.
+     * <p>Called by: GameController.solveAndReplay().
      *
      * @param initialBoard the starting board; it is not changed
      * @return how the game ended, with the moves played
@@ -33,14 +33,18 @@ public interface SolitaireSolver {
     Result solve(GameState initialBoard);
 
     /**
-     * The most work a solver may do for one game, so every game ends: a game stops when either limit is reached.
+     * Work limits for one game.
+     *
+     * <p>Kind: record, nested in SolitaireSolver.
+     * <p>Purpose: it guarantees every game ends: a game stops when either limit is reached.
+     * <p>Data: record fields maxMoves (int) and maxMillis (long, because milliseconds can exceed an int).
      *
      * @param maxMoves maximum number of moves played
      * @param maxMillis maximum running time in milliseconds
      */
     record Limits(int maxMoves, long maxMillis) {
         /**
-         * Checks the limits when the record is created.
+         * Rejects limits that would stop a game before it starts.
          *
          * @throws IllegalArgumentException if any limit is less than 1
          */
@@ -52,7 +56,11 @@ public interface SolitaireSolver {
     }
 
     /**
-     * How one game ended and the moves that led there.
+     * Outcome of one solved game.
+     *
+     * <p>Kind: record, nested in SolitaireSolver.
+     * <p>Purpose: it carries how the game ended and the moves that led there, back to GameController.
+ * <p>Data: record fields; the moves are kept with List.copyOf, so the result cannot be changed afterwards.
      *
      * @param status WON, STUCK, or LIMIT_REACHED
      * @param moves the moves played, in order
@@ -60,7 +68,7 @@ public interface SolitaireSolver {
      */
     record Result(GameStatus status, List<Move> moves, String detail) {
         /**
-         * Stores an unmodifiable copy of the moves.
+         * Rejects missing values and copies the move list.
          *
          * @throws NullPointerException for a null status, detail, or move list
          */

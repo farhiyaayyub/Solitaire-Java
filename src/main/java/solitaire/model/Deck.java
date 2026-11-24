@@ -1,7 +1,7 @@
 package solitaire.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,10 +10,14 @@ import solitaire.enums.Rank;
 import solitaire.enums.Suit;
 
 /**
- * A deck of exactly 52 different cards. The next card to draw is kept at the end of the list, because removing
- * the last element of an ArrayList is instant while removing the first would shift every other card.
+ * A deck of exactly 52 different cards.
  *
- * <p>Encapsulation: the card list is private; outside code only gets copies through drawOrder().
+ * <p>Kind: final class.
+ * <p>Purpose: it is the source of the cards for a new game: it is built (sorted, from a file, or shuffled), checked,
+ * and then dealt one card at a time onto the board.
+ * <p>Data: the cards in a private ArrayDeque, next card at the front: a deck is filled once and then only drawn from
+ * the front, both O(1), and never needs an index.
+ * <p>OOP: Encapsulation - the deque is private; outside code only gets copies through drawOrder().
  *
  * @author Farhiya Ayyub
  */
@@ -21,33 +25,31 @@ public final class Deck {
     /** 4 suits x 13 ranks = 52 cards. */
     public static final int CARD_COUNT = Suit.values().length * Rank.values().length;
 
-    private final List<Card> cards = new ArrayList<>();
+    private final Deque<Card> cards = new ArrayDeque<>();
 
     /**
-     * Creates the 52 cards in suit order (Hearts, Diamonds, Clubs, Spades), Ace to King within each suit. The King of
-     * Spades is drawn first, because the next card to draw is at the end of the list.
+     * Creates the 52 cards sorted by suit (Hearts, Diamonds, Clubs, Spades), Ace to King within each suit. Each card
+     * is put on the front, so the King of Spades, created last, is drawn first.
+     *
+     * <p>Called by: ShuffleConfiguration.prepareDeck(), GameController.automatic(), GameController.playFromMenu().
      */
     public Deck() {
         for (Suit suit : Suit.values()) {
             for (Rank rank : Rank.values()) {
-                cards.add(new Card(suit, rank));
+                cards.addFirst(new Card(suit, rank));
             }
         }
     }
 
     /**
-     * Creates a deck from a list whose first card is the first to be drawn. Stores copies, so later changes to the
-     * list's cards do not affect the deck.
+     * Creates a deck from a list whose first card is drawn first, storing copies so later changes to the list's cards
+     * do not affect the deck.
      *
-     * <p>Key idea: {@code HashSet.add()} returns {@code false} when an equal card is already in the set, which is how a
-     * duplicate is found in one pass. It works because Card overrides equals() and hashCode() to compare suit and rank
-     * only.
+     * <p>Key idea: {@code HashSet.add()} returns {@code false} when an equal card is already in the set, so a
+     * duplicate is found in one pass. This works because Card's equals() and hashCode() compare suit and rank only.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#code} - names the duplicate in the error</li>
-     *   <li>{@link Card#copy} - stores copies, not the caller's cards</li>
-     * </ul>
+     * <p>Called by: CardFileLoader.load(), ShuffleConfiguration.prepareDeck(Deck), GameController.simulate(),
+     * SolvableDealProvider.create().
      *
      * @param drawOrder the cards in draw order; the first element is the first card to be drawn
      * @throws IllegalArgumentException for a duplicate card or a card count other than 52
@@ -55,44 +57,30 @@ public final class Deck {
     public Deck(List<Card> drawOrder) {
         Set<Card> uniqueCards = new HashSet<>();
         for (Card card : drawOrder) {
-            // Set.add returns false when an equal card (same suit and rank) is already in the set.
             if (!uniqueCards.add(card)) {
                 throw new IllegalArgumentException("Duplicate card " + card.code());
             }
-            cards.add(card.copy());
+            cards.addLast(card.copy());
         }
         if (cards.size() != CARD_COUNT) {
             throw new IllegalArgumentException("Expected " + CARD_COUNT + " cards, found " + cards.size());
         }
-        // Reversed so the first card of drawOrder is at the end of the list, where draw() takes it.
-        Collections.reverse(cards);
     }
 
     /**
-     * Returns copies of the cards in the order they will be drawn (first element = next card). The list cannot be
-     * modified, and changing the copied cards does not affect the deck.
+     * {@return unmodifiable copies of the cards in draw order, next card first} Changing the copies does not affect
+     * the deck.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#copy} - protects the deck's own cards</li>
-     * </ul>
-     *
-     * <p>Called by: {@code ShuffleConfiguration.prepareDeck()}.
-     *
-     * @return copies of the cards, next card first
+     * <p>Called by: ShuffleConfiguration.prepareDeck(Deck), GameController.simulate().
      */
     public List<Card> drawOrder() {
-        List<Card> drawOrderSnapshot = new ArrayList<>();
-        for (int cardIndex = cards.size() - 1; cardIndex >= 0; cardIndex--) {
-            drawOrderSnapshot.add(cards.get(cardIndex).copy());
-        }
-        return List.copyOf(drawOrderSnapshot);
+        return cards.stream().map(Card::copy).toList();
     }
 
     /**
      * Checks that the deck holds exactly 52 different cards.
      *
-     * <p>Called by: {@code ShuffleConfiguration.prepareDeck()}.
+     * <p>Called by: ShuffleConfiguration.prepareDeck(Deck).
      *
      * @throws IllegalStateException unless the deck holds exactly 52 cards and no two are equal
      */
@@ -103,9 +91,9 @@ public final class Deck {
     }
 
     /**
-     * Removes and returns the next card (the end of the list).
+     * Removes and returns the next card.
      *
-     * <p>Called by: {@code GameState.deal()}.
+     * <p>Called by: GameState.deal().
      *
      * @return the card that was removed
      * @throws IllegalStateException if the deck is empty
@@ -114,16 +102,10 @@ public final class Deck {
         if (cards.isEmpty()) {
             throw new IllegalStateException("Empty deck");
         }
-        return cards.removeLast();
+        return cards.removeFirst();
     }
 
-    /**
-     * Returns how many cards have not been drawn yet.
-     *
-     * <p>Called by: {@code GameState.deal()}.
-     *
-     * @return how many cards have not been drawn yet
-     */
+    /** {@return how many cards have not been drawn yet} Called by: GameState.deal(). */
     public int size() {
         return cards.size();
     }

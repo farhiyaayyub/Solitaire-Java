@@ -3,12 +3,15 @@ package solitaire.move;
 import solitaire.enums.MoveType;
 
 /**
- * One move: its type, where it starts, where it ends, and how many cards it moves. Indexes start at 0: a column
- * index is 0 to 6 (T1 to T7), and a foundation index is the suit's position in Suit (0 Hearts to 3 Spades). Draw and
- * recycle moves ignore both indexes.
+ * One Solitaire move.
  *
- * <p>It is a record, so a move cannot change after it is created, and Java generates its constructor, getters,
- * equals(), and hashCode(). That lets moves be stored in a Set.
+ * <p>Kind: record, uses MoveType.
+ * <p>Purpose: it describes a move by its type, where it starts, where it ends, and how many cards it moves. Indexes
+ * start at 0: a column is 0 to 6 (T1 to T7), a foundation is the suit's position in Suit (0 Hearts to 3 Spades), and
+ * draw and recycle moves ignore both.
+ * <p>Data: four record fields (a MoveType and three ints). A record was chosen because its generated equals() and
+ * hashCode() let moves be stored in a HashSet.
+ * <p>OOP: Encapsulation - a move cannot change after it is made.
  *
  * @param type        the kind of move
  * @param source      the column or foundation the cards leave
@@ -19,15 +22,11 @@ import solitaire.enums.MoveType;
 public record Move(MoveType type, int source, int destination, int count) {
 
     /**
-     * Returns a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
-     * cards=2", used in error messages. The screen uses ConsoleRenderer.describeMove(), which also names the card.
+     * {@return a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
+     * cards=2"} It is only used in error messages; the screen uses ConsoleRenderer.describeMove(), which names the
+     * card.
      *
-     * <p>Overrides the {@code toString()} that Java generates for a record.
-     *
-     * <p>Called by: string concatenation in the error message of {@code SolitaireGame.apply()}.
-     *
-     * @return a technical description with one-based indexes, such as "TABLEAU_TO_TABLEAU source=3 destination=6
-     *     cards=2", used in error messages
+     * <p>Called by: SolitaireGame.apply() (through string concatenation).
      */
     @Override
     public String toString() {

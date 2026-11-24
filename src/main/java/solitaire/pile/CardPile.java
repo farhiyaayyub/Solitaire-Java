@@ -7,13 +7,17 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * Parent class of the four kinds of piles. It holds the code every pile shares (the card list, taking and placing
- * cards, copying) and leaves two decisions to each subclass: which cards it accepts, and how it copies itself.
- * The top card is the last element of the list.
+ * A pile of cards on the board (Template Method pattern for takeTop() and the onTopRemoved() hook).
  *
- * <p>It extends AbstractList&lt;Card&gt;, so a pile can be read like a read-only List. Inheritance: the four piles
- * share this code. Abstraction: accepts() and copy() are abstract, so each pile must define them. Encapsulation: the
- * card list is private; subclasses change it only through protected methods.
+ * <p>Kind: abstract class, extends AbstractList&lt;Card&gt; (so a pile reads like a read-only List); extended by
+ * StockPile, WastePile, TableauPile, and FoundationPile.
+ * <p>Purpose: it holds the code every pile shares: reading, taking, placing, and copying cards. Each subclass adds
+ * only its own rules.
+ * <p>Data: the cards in a private ArrayList, top card at the end: adding or removing the top is O(1), and the tableau
+ * also needs cards from the middle (get(index), subList), which a Deque cannot give.
+ * <p>OOP: Inheritance - the four piles reuse this code. Abstraction - accepts(), copy(), and name() are abstract, so
+ * each pile gives its own rule. Polymorphism - place() and the display code call the accepts() and name() of the
+ * actual pile. Encapsulation - subclasses change the list only through protected methods; others only get copies.
  *
  * @author Farhiya Ayyub
  */
@@ -21,33 +25,23 @@ public abstract class CardPile extends AbstractList<Card> {
     private final List<Card> cards = new ArrayList<>();
 
     /**
-     * Returns the card at a position, counted from 0 at the bottom. Required by AbstractList; the returned card is the
-     * real card, not a copy.
+     * {@return a copy of the card at a position, counted from 0 at the bottom} It is a copy, so callers cannot turn a
+     * card on the board face up or down.
      *
-     * <p>Implements {@code AbstractList.get()}.
-     *
-     * <p>Called by: {@code ConsoleRenderer.describeMove()}.
+     * <p>Called by: ConsoleRenderer.describeMove().
      *
      * @param index the position, 0 for the bottom card
-     * @return the card at a position, counted from 0 at the bottom
      */
     @Override
     public Card get(int index) {
-        return cards.get(index);
+        return cards.get(index).copy();
     }
 
     /**
-     * Returns the number of cards in the pile. Required by AbstractList.
+     * {@return the number of cards in the pile}
      *
-     * <p>Implements {@code AbstractList.size()}.
-     *
-     * <p>Called by: {@code GameState.foundationCount()}, {@code ConsoleRenderer.render()},
-     * {@code ConsoleRenderer.describeMove()}, {@code MoveGenerator.addLegalMoves()},
-     * {@code MoveValidator.isLegalDraw()}, {@link #top}, {@link #takeTop}, {@link #removeTopCards},
-     * {@link FoundationPile#accepts}, {@link TableauPile#accepts}, {@link TableauPile#isValidSequence},
-     * {@link TableauPile#sequenceStart}, {@code TableauPile.revealTop()}, {@code ObservableBoard.from()}.
-     *
-     * @return the number of cards in the pile
+     * <p>Called by: GameState.foundationCount(), ConsoleRenderer.render(), ConsoleRenderer.describeMove(),
+     * MoveGenerator.addLegalMoves(), MoveValidator.isLegalDraw(), ObservableBoard.from(), and the pile classes.
      */
     @Override
     public int size() {
@@ -55,83 +49,68 @@ public abstract class CardPile extends AbstractList<Card> {
     }
 
     /**
-     * Returns copies of all cards from bottom to top in a list that cannot be modified, so callers cannot change the
-     * pile through it.
+     * {@return unmodifiable copies of the cards, bottom first} Callers cannot change the pile through it.
      *
-     * <p>Called by: {@code GameState.verify()}, {@code ConsoleRenderer.renderTableau()},
-     * {@code ObservableBoard.from()}.
-     *
-     * @return read-only copies of the cards, bottom first
+     * <p>Called by: GameState.verify(), ConsoleRenderer.renderTableau(), ObservableBoard.from().
      */
     public List<Card> cards() {
         return cards.stream().map(Card::copy).toList();
     }
 
     /**
-     * Returns the top card without removing it.
+     * {@return a copy of the top card, without removing it}
      *
-     * <p>Called by: {@code ConsoleRenderer.describeMove()}, {@code ConsoleRenderer.topOrEmpty()},
-     * {@code MoveValidator.isLegalSingleCardMove()}.
+     * <p>Called by: ConsoleRenderer.describeMove(), ConsoleRenderer.topOrEmpty(), MoveValidator.isLegalSingleCardMove().
      *
-     * @return the top card without removing it
      * @throws IndexOutOfBoundsException if the pile is empty
      */
     public Card top() {
-        return cardAt(size() - 1);
+        return cardAt(size() - 1).copy();
     }
 
     /**
-     * Returns {@code true} if the pile has no cards.
+     * {@return {@code true} if the pile has no cards}
      *
-     * <p>Overrides {@code AbstractList.isEmpty()}.
-     *
-     * <p>Called by: {@code GameState.won()}, {@code ConsoleRenderer.render()}, {@code ConsoleRenderer.describeMove()},
-     * {@code ConsoleRenderer.topOrEmpty()}, {@code MoveValidator.isLegal()}, {@code MoveValidator.isLegalDraw()},
-     * {@code MoveValidator.isLegalSingleCardMove()}, {@link StockPile#recycle}, {@link TableauPile#accepts},
-     * {@code TableauPile.revealTop()}, {@code SolvableDealProvider.create()}.
-     *
-     * @return {@code true} if the pile has no cards
+     * <p>Called by: GameState.won(), ConsoleRenderer.render(), ConsoleRenderer.describeMove(),
+     * ConsoleRenderer.topOrEmpty(), MoveValidator.isLegal(), MoveValidator.isLegalDraw(),
+     * MoveValidator.isLegalSingleCardMove(), SolvableDealProvider.create(), and the pile classes.
      */
+    @Override
     public boolean isEmpty() {
         return cards.isEmpty();
     }
 
     /**
-     * Returns {@code true} if this pile's rule allows the card to be placed on top. Each subclass defines its own rule,
-     * and Java runs the rule of the actual pile object.
+     * {@return {@code true} if this pile's rule allows the card to be placed on top}
      *
-     * <p>Abstract: implemented by {@link TableauPile} (one rank lower, opposite color), {@link FoundationPile} (same
-     * suit, next rank), and {@link StockPile} and {@link WastePile} (always {@code false}).
-     *
-     * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()}, {@link #place}.
+     * <p>Called by: MoveValidator.isLegalSingleCardMove(), place().
      *
      * @param card the card to check
-     * @return {@code true} if this pile's rule allows the card to be placed on top
      */
     public abstract boolean accepts(Card card);
 
     /**
-     * Returns a new pile of the same kind holding copies of these cards.
+     * {@return a new pile of the same kind holding copies of these cards} Each subclass returns its own type, so a
+     * copied board keeps its real pile types.
      *
-     * <p>Abstract: implemented by {@link TableauPile}, {@link FoundationPile}, {@link StockPile}, and
-     * {@link WastePile}, so each copy keeps its own type.
-     *
-     * <p>Called by: no one directly; {@code GameState.copy()} calls the copy() of each concrete pile.
-     *
-     * @return a new pile of the same kind holding copies of these cards
+     * <p>Called by: GameState.copy() (on each concrete pile).
      */
     public abstract CardPile copy();
 
     /**
+     * {@return the pile's name in a move sentence, such as "T3", "the waste", or "the clubs foundation"} The display
+     * code never has to check which kind of pile it has.
+     *
+     * <p>Called by: ConsoleRenderer.describeMove().
+     *
+     * @param position the column index from the move (0 for T1); piles that are not columns ignore it
+     */
+    public abstract String name(int position);
+
+    /**
      * Adds the card on top if this pile's accepts() rule allows it.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #accepts} - enforces this pile's rule</li>
-     *   <li>{@link #addToTop} - adds the card</li>
-     * </ul>
-     *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
+     * <p>Called by: SolitaireGame.applyLegalMove().
      *
      * @param card the card to add
      * @throws IllegalArgumentException if the pile does not accept the card (nothing is changed)
@@ -144,15 +123,9 @@ public abstract class CardPile extends AbstractList<Card> {
     }
 
     /**
-     * Removes and returns the top card, then runs onTopRemoved().
+     * Removes and returns the top card, then runs the onTopRemoved() hook so a subclass can react.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #size} - finds the top position</li>
-     *   <li>{@link #onTopRemoved} - lets the subclass react, e.g. reveal</li>
-     * </ul>
-     *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}, {@link StockPile#drawTo}, {@link StockPile#recycle}.
+     * <p>Called by: SolitaireGame.applyLegalMove(), StockPile.drawTo(), StockPile.recycle().
      *
      * @return the card that was removed
      * @throws IndexOutOfBoundsException if the pile is empty
@@ -164,15 +137,9 @@ public abstract class CardPile extends AbstractList<Card> {
     }
 
     /**
-     * Removes the top count cards and returns them in bottom-to-top order, then runs onTopRemoved().
+     * Removes the top count cards and returns them bottom card first, then runs the onTopRemoved() hook.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link #size} - checks the count and finds the top</li>
-     *   <li>{@link #onTopRemoved} - lets the subclass react, e.g. reveal</li>
-     * </ul>
-     *
-     * <p>Called by: {@link TableauPile#removeSequence}.
+     * <p>Called by: TableauPile.removeSequence().
      *
      * @param count how many cards to remove
      * @return the removed cards, bottom card first
@@ -190,23 +157,23 @@ public abstract class CardPile extends AbstractList<Card> {
     }
 
     /**
-     * Returns the card at a position counted from 0 at the bottom; for use by subclasses.
+     * {@return the real card at a position, counted from 0 at the bottom} Only subclasses get the real card; other
+     * classes get copies from get() and top().
      *
-     * <p>Called by: {@link #top}, {@link TableauPile#accepts}, {@link TableauPile#isValidSequence},
-     * {@link TableauPile#sequenceStart}, {@code TableauPile.revealTop()}.
+     * <p>Called by: top(), TableauPile.accepts(), TableauPile.isValidSequence(), TableauPile.sequenceStart(),
+     * TableauPile.revealTop().
      *
      * @param index the position, 0 for the bottom card
-     * @return the card at a position counted from 0 at the bottom
      */
     protected Card cardAt(int index) {
         return cards.get(index);
     }
 
     /**
-     * Puts the card on top without checking accepts(); used while dealing, drawing, and copying.
+     * Puts the card on top without checking accepts(), for dealing, drawing, and copying.
      *
-     * <p>Called by: {@link #place}, {@link #copyCardsInto}, {@link StockPile#StockPile}, {@link StockPile#recycle},
-     * {@link TableauPile#TableauPile}, {@link TableauPile#addSequence}, {@code WastePile.receiveDrawn()}.
+     * <p>Called by: place(), copyCardsInto(), StockPile(List), StockPile.recycle(), TableauPile(List),
+     * TableauPile.addSequence(), WastePile.receiveDrawn().
      *
      * @param card the card to add
      */
@@ -215,12 +182,10 @@ public abstract class CardPile extends AbstractList<Card> {
     }
 
     /**
-     * Runs after cards are removed from the top. It does nothing here; TableauPile overrides it to turn the newly
-     * exposed card face up.
+     * Hook that runs after cards are removed from the top; does nothing unless a subclass overrides it (TableauPile
+     * does, to reveal its new top card).
      *
-     * <p>Overridden by {@link TableauPile#onTopRemoved}.
-     *
-     * <p>Called by: {@link #takeTop}, {@link #removeTopCards}.
+     * <p>Called by: takeTop(), removeTopCards().
      */
     protected void onTopRemoved() {
     }
@@ -229,16 +194,9 @@ public abstract class CardPile extends AbstractList<Card> {
      * Adds a copy of every card, bottom to top, to the supplied empty pile and returns that pile. The generic type T
      * lets each subclass's copy() return its own type without a cast.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#copy} - copies each card</li>
-     *   <li>{@link #addToTop} - adds it without the accepts() check</li>
-     * </ul>
+     * <p>Called by: the copy() of StockPile, WastePile, TableauPile, and FoundationPile.
      *
-     * <p>Called by: {@link FoundationPile#copy}, {@link StockPile#copy}, {@link TableauPile#copy},
-     * {@link WastePile#copy}.
-     *
-     * @param <T> the kind of pile, so copy() can return its own type
+     * @param <T> the kind of pile
      * @param target an empty pile of the right kind
      * @return the same target pile, now holding the copies
      */

@@ -10,9 +10,9 @@ external configuration file, so they can change without rebuilding. No external 
 ```powershell
 ./run.ps1                       # interactive menu
 ./run.ps1 guaranteed --compact  # a deal with a verified winning solution
-./run.ps1 random 7 --compact    # seeded random deal (seed 7 is a win)
-./run.ps1 simulate 100 0        # win rate over 100 random deals
-./run.ps1 compare 100 0         # Random vs In-Faro vs Out-Faro on the same seeds
+./run.ps1 random --compact      # one new random deal
+./run.ps1 simulate 100          # win rate over 100 random deals
+./run.ps1 compare 100           # Random vs In-Faro vs Out-Faro on the same random decks
 ./run.ps1 validate input.txt    # check a card file without playing
 ./demo-validation.ps1           # run every valid and invalid card file
 ./run.ps1 manual                # choose each move yourself
@@ -22,7 +22,7 @@ external configuration file, so they can change without rebuilding. No external 
 With Maven: `mvn package`, then `java -jar target/klondike-solitaire-1.0.0.jar [command]`.
 
 `random`, `simulate`, and `compare` also accept solver limits for one run: `[moves [ms]]`, for example
-`./run.ps1 random 7 --compact 5000 20000`.
+`./run.ps1 random --compact 5000 20000`.
 
 Exit codes: `0` success, `1` file or game error, `2` invalid input or invalid settings.
 
@@ -56,12 +56,11 @@ sample valid and invalid files.
 | `solver.maxMillis` | 10000 | Time limit for one game, in milliseconds |
 | `simulation.defaultGameCount` | 100 | Games for `simulate` and `compare` when no count is given |
 | `simulation.maxGameCount` | 100 | Highest game count the menu accepts |
-| `simulation.defaultSeed` | 0 | Seed for `random`, `simulate`, `compare`, and `manual` when none is given |
 | `cardFiles.folder` | card-files | Folder searched when only a card file name is typed |
 
 `GameConfig` reads the defaults, lets `solitaire.properties` replace them, and checks every value. An unknown name,
-a value that is not a whole number, a value below 1, or a folder that does not exist stops the program with a red
-`Configuration error` that names the file and the setting. A missing `solitaire.properties` simply means "use the
+a value that is not a whole number, a value below 1, a number too large, or a folder that does not exist stops the
+program with a red `Configuration error` that names the file and the setting. A missing `solitaire.properties` simply means "use the
 defaults".
 
 ## Rules implemented
@@ -91,7 +90,7 @@ back. Each turn:
 
 The loop also stops with **LIMIT_REACHED** after 3,000 moves or 10 seconds, whichever comes first, so every game
 ends. Choosing the best move is one pass over the legal moves, O(number of moves); on a tie the move listed first
-wins, so results are reproducible.
+wins, so the solver always plays the same deal the same way.
 
 **Scores**
 
@@ -127,13 +126,13 @@ size); every other type moves exactly one card. The order is fixed, so the same 
 
 ### 3. Shuffling (`ShuffleStrategy`, Strategy pattern)
 
-- **Random:** Fisher-Yates through `Collections.shuffle(list, new Random(seed))`, O(n). The same seed always gives the
-  same order, like a game number.
+- **Random:** Fisher-Yates through `Collections.shuffle(list)`, O(n). Every call gives a new random order, so every
+  game is a different deal. To play a fixed deal again and again, use a card file.
 - **Faro (perfect shuffle):** split the 52 cards into two halves of 26 and interleave them one card at a time, O(n).
   **In-Faro** takes the second half first (the top card moves to position 2); **Out-Faro** takes the first half first
   (the top and bottom cards stay in place). The two classes differ only in `startsWithSecondHalf()`.
 - **No shuffle:** keeps the card file's order.
-- A Faro shuffle is not random, so on a standard deck it is applied after one seeded random shuffle; otherwise every
+- A Faro shuffle is not random, so on a standard deck it is applied after one random shuffle; otherwise every
   game would be the same deal. On a card file, the file order is used directly.
 - After any shuffle, a new `Deck` is built and checked again (no duplicates, exactly 52 cards).
 
@@ -154,10 +153,16 @@ up. The remaining 24 cards go to the stock face down. The board is then checked 
 | Board after each move | `GameState.verify()` | Exactly 52 distinct cards, O(n) with a `HashSet` |
 | Menu answers | `ConsoleInput` | Re-asks until valid; `try/catch` for numbers; range 1 to the maximum game count |
 
-### 6. Win rate (`GameController.simulate`)
+### 6. Win rate (`GameController.simulate`, `ConsoleRenderer.simulationSummary`)
 
-Game *n* uses seed *first seed + n*. Each game is counted as won, limit reached, or stuck, and the win rate is
-`100.0 * won / games`.
+Every game is a new random deal. `GameController.simulate` counts each game as won, limit reached, or stuck, and
+`ConsoleRenderer.simulationSummary` computes the win rate as `100.0 * won / games` (shown with 2 decimals). The
+`100.0` makes the division use decimals; `100 * won / games` would be integer division and drop them. Because the
+deals are random, the win rate changes a little from run to run.
+
+`compare` makes one random deck per game first. The Random row plays those decks as they are, and the In-Faro and
+Out-Faro rows apply their perfect shuffle to the same decks. So within one comparison all three start from the same
+cards, and only the shuffle method differs.
 
 ## Design
 
@@ -184,28 +189,39 @@ solitaire.properties                your settings (all commented out by default)
 
 Every class and method has standard Javadoc. Press **Ctrl+Q** on a name in IntelliJ to see it formatted.
 
+Each class comment explains the class in four lines:
+
 | Part | Meaning |
 | --- | --- |
-| First sentence | What the method does |
+| `Kind:` | Class, abstract class, interface, record, or enum, and which types it extends, implements, or uses |
+| `Purpose:` | The job the class has in the program |
+| `Data:` | What the class holds, and why that collection was chosen (`ArrayList`, `ArrayDeque`, `EnumMap`, `HashMap`, ...) |
+| `OOP:` | The object-oriented principles the class shows, and how |
+
+Each method comment adds only what the code does not show at a glance:
+
+| Part | Meaning |
+| --- | --- |
+| First sentence | What the method does, including rules and edge cases |
 | `Algorithm:` | The steps, as a numbered list (methods with a real algorithm) |
 | `Key idea:` | Which data structure or technique is used, and why |
-| `Implements` / `Overrides` / `Implemented by` | Which interface or parent method it implements, or which classes implement it |
-| `Calls:` | The project methods it calls, each with a short reason |
 | `Called by:` | The methods that call it; "(through X)" means the call goes through interface or parent type X |
 | `@param`, `@return`, `@throws` | Inputs, result, and errors |
 
 ### Object-oriented principles
 
 **Encapsulation**
-- All fields are private. Piles, decks, and games return copies of their cards, never the live objects.
+- All fields are private. Piles, decks, and games return copies of their cards, never the live objects: `get()`,
+  `top()`, and `cards()` all return copies, so no outside class can turn a card on the board face up or down.
 - `SolitaireGame` owns its board privately and changes it only through `play(move)`, which validates first.
 - Records such as `Move`, `GameConfig`, `ObservableBoard`, and `SolitaireSolver.Result` cannot change after creation;
   `GameConfig` checks every setting when it is created.
 
 **Abstraction**
 - `CardPile` defines what every pile can do without saying how each pile's rule works.
-- `ShuffleStrategy` and `SolitaireSolver` are interfaces. `GameController` receives a `SolitaireSolver` in its
-  constructor and never depends on `VisibleSolver` directly (dependency injection).
+- `ShuffleStrategy` and `SolitaireSolver` are interfaces. `GameController` receives a `SolitaireSolver`, a
+  `ConsoleInput`, and a `ConsoleRenderer` in its constructor and never depends on `VisibleSolver` directly
+  (dependency injection).
 - `ObservableBoard` hides face-down cards, so the solver cannot cheat.
 
 **Inheritance**
@@ -217,6 +233,8 @@ Every class and method has standard Javadoc. Press **Ctrl+Q** on a name in Intel
 - `accepts(Card)` is implemented by every pile: a tableau needs one rank lower in the opposite color, a foundation
   needs the same suit one rank higher, and stock and waste accept nothing.
 - `TableauPile` overrides the `onTopRemoved()` hook to turn the newly exposed card face up.
+- `name()` is implemented by every pile ("T3", "the waste", "the clubs foundation"), so `ConsoleRenderer` describes a
+  move without checking which kind of pile it has.
 - `MoveValidator` and `SolitaireGame` handle every single-card move with the same code,
   `destination.accepts(source.top())` and `destination.place(source.takeTop())`. Java chooses the right rule at run
   time.
@@ -228,25 +246,26 @@ Every class and method has standard Javadoc. Press **Ctrl+Q** on a name in Intel
   a `Deque`. An `ArrayList` is used instead of a `Deque` because the tableau needs cards in the middle of a column
   (`get(index)`): to check a moving sequence, to find its lowest card, to see whether a hidden card lies under it,
   and to print each row.
-- `Deck` stores its next card at the end for the same reason.
+- `Deck` keeps its cards in an `ArrayDeque` with the next card at the front: a deck is filled once and then only
+  drawn from the front, and a `Deque` does both in O(1). It never needs a card from the middle, so it needs no index.
 - `GameState` keeps foundations in an `EnumMap` keyed by suit.
 - The solver uses a `HashMap` from visible positions to a `HashSet` of moves already tried there.
 - Duplicate checks use `HashSet`.
 
 ## Measured win rates
 
-Command: `compare 100 0` (Draw 1, seeds 0 to 99, default limits of 3,000 moves and 10 seconds per game). Every game
-was replayed through the engine.
+Example run of `compare 100` (Draw 1, 100 random deals, default limits of 3,000 moves and 10 seconds per game). Every
+game was replayed through the engine. The deals are random, so another run gives slightly different numbers.
 
 | Method | Games | Won | Not solved | Limit reached | No new moves | Win rate | Avg moves |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Random | 100 | 40 | 60 | 11 | 49 | 40% | 875.43 |
-| Random start + In-Faro | 100 | 36 | 64 | 13 | 51 | 36% | 947.21 |
-| Random start + Out-Faro | 100 | 35 | 65 | 14 | 51 | 35% | 1016.16 |
+| Random | 100 | 47 | 53 | 18 | 35 | 47% | 1079.87 |
+| Random start + In-Faro | 100 | 45 | 55 | 12 | 43 | 45% | 926.12 |
+| Random start + Out-Faro | 100 | 41 | 59 | 14 | 45 | 41% | 949.29 |
 
-The whole comparison takes about 7 seconds. Draw 3 is much harder: about 10% over 100 random deals.
+The whole comparison took about 32 seconds. Draw 3 is much harder: about 10% over 100 random deals.
 
-These are results for this sample of 100 deals, not a guarantee. Because a Faro shuffle of a random deck is still a
+These are results for one sample of 100 deals, not a guarantee. Because a Faro shuffle of a random deck is still a
 random deck, the three rows are expected to be similar.
 
 ## Limits

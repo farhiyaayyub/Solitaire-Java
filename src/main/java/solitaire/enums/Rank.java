@@ -1,10 +1,13 @@
 package solitaire.enums;
 
 /**
- * The 13 card ranks. Each rank has a numeric value from 1 (Ace) to 13 (King), used by the placement rules, and a
- * symbol used in card files and on screen.
+ * The 13 card ranks.
  *
- * <p>Encapsulation: each rank keeps its value and symbol in private final fields, read through value() and symbol().
+ * <p>Kind: enum.
+ * <p>Purpose: it gives every card its rank, used by the placement rules, the card files, and the screen.
+ * <p>Data: each constant stores a number value from 1 (Ace) to 13 (King), which the rules compare, and the symbol
+ * used in card files and on screen.
+ * <p>OOP: Encapsulation - value and symbol are private final fields, read through value() and symbol().
  *
  * @author Farhiya Ayyub
  */
@@ -17,10 +20,10 @@ public enum Rank {
     private final String symbol;
 
     /**
-     * Runs once for each constant above and stores its value and symbol.
+     * Runs once for each constant above.
      *
      * @param value the rank number, 1 (Ace) to 13 (King)
-     * @param symbol the text shown for this value
+     * @param symbol the text used in card files and on screen
      */
     Rank(int value, String symbol) {
         this.value = value;
@@ -28,24 +31,15 @@ public enum Rank {
     }
 
     /**
-     * Returns 1 for Ace up to 13 for King; rules compare these numbers ("one rank lower/higher").
+     * {@return 1 for Ace up to 13 for King} The rules compare these numbers ("one rank lower/higher").
      *
-     * <p>Called by: {@code Card.id()}, {@code FoundationPile.accepts()}, {@code TableauPile.fitsBelow()},
-     * {@code ObservableBoard.observe()}.
-     *
-     * @return 1 for Ace up to 13 for King
+     * <p>Called by: Card.id(), FoundationPile.accepts(), TableauPile.fitsBelow(), ObservableBoard.observe().
      */
     public int value() {
         return value;
     }
 
-    /**
-     * Returns the symbol used in card files and on screen: A, 2 to 10, J, Q, or K.
-     *
-     * <p>Called by: {@code CardFileLoader.parseRank()}, {@code Card.code()}.
-     *
-     * @return the rank symbol, such as "A" or "10"
-     */
+    /** {@return A, 2 to 10, J, Q, or K} Called by: CardFileLoader.parseRank(), Card.code(). */
     public String symbol() {
         return symbol;
     }

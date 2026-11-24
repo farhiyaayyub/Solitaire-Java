@@ -5,27 +5,26 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * The face-down cards that have not been drawn yet. A draw moves its top card to the waste; when it is empty, a
- * recycle turns the whole waste back into the stock.
+ * The stock: the face-down cards that have not been drawn yet.
  *
- * <p>Inheritance: it extends CardPile. Polymorphism: it overrides accepts() and copy().
+ * <p>Kind: final class, extends CardPile.
+ * <p>Purpose: it feeds the waste with draw moves and is refilled from the waste with a recycle move.
+ * <p>Data: none of its own; the cards are kept in CardPile's list.
+ * <p>OOP: Inheritance - it reuses CardPile's card handling. Polymorphism - it overrides accepts(), copy(), and
+ * name().
  *
  * @author Farhiya Ayyub
  */
 public final class StockPile extends CardPile {
 
-    /** Creates an empty stock; copy() fills it with copied cards. */
+    /** Creates an empty stock. Called by: copy(). */
     public StockPile() {
     }
 
     /**
      * Turns every card face down and stacks them so the first card in the list ends on top and is drawn first.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link Card#conceal} - stock cards are face down</li>
-     *   <li>{@link CardPile#addToTop} - stacks the cards</li>
-     * </ul>
+     * <p>Called by: GameState.deal().
      *
      * @param drawOrder the cards in draw order; the first element is the first card to be drawn
      */
@@ -38,60 +37,57 @@ public final class StockPile extends CardPile {
     }
 
     /**
-     * Always returns {@code false}: players never place cards on the stock; only recycle() refills it.
+     * {@return {@code false}, always} Players never place cards on the stock; only recycle() refills it.
      *
-     * <p>Implements {@link CardPile#accepts}.
-     *
-     * <p>Called by: {@code MoveValidator.isLegalSingleCardMove()} (through CardPile),
-     * {@link CardPile#place} (through CardPile).
+     * <p>Called by: MoveValidator.isLegalSingleCardMove() and CardPile.place() (through CardPile).
      *
      * @param card the card to check
-     * @return {@code false}, always
      */
     @Override
     public boolean accepts(Card card) {
         return false;
     }
 
-    /**
-     * Returns a new stock holding copies of these cards in the same order.
-     *
-     * <p>Implements {@link CardPile#copy}.
-     *
-     * <p>Called by: {@code GameState.copy()}.
-     *
-     * @return a new stock holding copies of these cards in the same order
-     */
+    /** {@return a new stock holding copies of these cards in the same order} Called by: GameState.copy(). */
     @Override
     public StockPile copy() {
         return copyCardsInto(new StockPile());
     }
 
     /**
-     * Moves one card from the top of the stock to the top of the waste and turns it face up. A Draw 3 move calls this
-     * three times.
+     * {@return "the stock"}
      *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
+     * <p>Called by: ConsoleRenderer.describeMove() (through CardPile).
+     *
+     * @param position not used; there is only one stock
+     */
+    @Override
+    public String name(int position) {
+        return "the stock";
+    }
+
+    /**
+     * Moves one card from the stock to the waste, face up. A Draw 3 move calls this three times.
+     *
+     * <p>Called by: SolitaireGame.applyLegalMove().
      *
      * @param waste the waste that receives the card
+     * @throws IllegalStateException if the stock is empty
      */
     public void drawTo(WastePile waste) {
+        if (isEmpty()) {
+            throw new IllegalStateException("Cannot draw from an empty stock");
+        }
         waste.receiveDrawn(takeTop());
     }
 
     /**
-     * Moves every waste card back to the stock face down. Taking the waste from the top reverses it again, so the stock
-     * is drawn in the same order as before.
+     * Moves every waste card back to the stock, face down.
      *
-     * <p>Calls:
-     * <ul>
-     *   <li>{@link CardPile#isEmpty} - the stock must be empty and the waste must have cards</li>
-     *   <li>{@link CardPile#takeTop} - takes the waste cards one by one</li>
-     *   <li>{@link Card#conceal} - turns them face down</li>
-     *   <li>{@link CardPile#addToTop} - stacks them back in the stock</li>
-     * </ul>
+     * <p>Key idea: taking the waste from the top reverses its order, so the stock is drawn in the same order as the
+     * first time.
      *
-     * <p>Called by: {@code SolitaireGame.applyLegalMove()}.
+     * <p>Called by: SolitaireGame.applyLegalMove().
      *
      * @param waste the waste to turn back into the stock
      * @throws IllegalStateException unless the stock is empty and the waste is not
