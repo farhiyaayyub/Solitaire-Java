@@ -14,52 +14,27 @@ import solitaire.pile.CardPile;
 import solitaire.shuffle.ShuffleConfiguration;
 
 /**
- * Console display of the game.
- *
- * <p>Kind: final class, uses SolitaireGame, GameState, CardPile, and ConsoleColor.
- * <p>Purpose: prints everything the player sees: the board, moves, results, and simulation reports. It only reads
- * games and boards and never changes them, so the display can change without affecting the rules.
- * <p>Data: none; it only keeps the empty-slot text. renderTableau() turns the columns into a List of Lists, because
- * it needs index access to print row by row across the seven columns.
- * <p>OOP: Abstraction - other classes call render(game) without knowing the layout. Polymorphism - describeMove() and
- * topOrEmpty() work with any kind of CardPile.
+ * Prints everything the player sees: the board, the legal moves, each move as a sentence, the results, and the
+ * simulation reports. All screen output of the game goes through this class.
  *
  * @author Farhiya Ayyub
  */
 public final class ConsoleRenderer {
     private static final String EMPTY_SLOT = "[     ]";
 
-    /**
-     * Prints the title after a blank line, without color.
-     *
-     * <p>Called by: GameController.shuffleAndPlay(), GameController.playFromMenu(), simulationStarted().
-     *
-     * @param title the title text
-     */
+    /** Prints a title after a blank line. */
     public void heading(String title) {
         System.out.println("\n" + title);
     }
 
-    /**
-     * Prints the title after a blank line, indented and in cyan.
-     *
-     * <p>Called by: render(), showMoves(), simulationSummary(), renderTableau().
-     *
-     * @param title the title text
-     */
+    /** Prints a section title after a blank line, indented and in cyan. */
     public void section(String title) {
         System.out.println("\n  " + ConsoleColor.CYAN.paint(title));
     }
 
     /**
-     * Prints the whole board from a copy of the game's state: the draw mode, the stock (always shown as [XX]) and the
-     * waste top card with their sizes, the top card of each foundation, the seven columns, a legend, and the move
-     * count and status.
-     *
-     * <p>Called by: GameController.playShuffled(), GameController.guaranteed(), GameController.manual(),
-     * GameController.replay().
-     *
-     * @param game the game to print
+     * Prints the whole board: the draw mode, the stock and the waste with their sizes, the top card of each foundation,
+     * the seven columns, a legend, and the move count and status.
      */
     public void render(SolitaireGame game) {
         GameState board = game.state();
@@ -83,13 +58,7 @@ public final class ConsoleRenderer {
         System.out.println("\n  Moves: " + game.moves() + " | " + statusText(game.status()));
     }
 
-    /**
-     * {@return the status in words, such as "Won - all 52 cards completed"}
-     *
-     * <p>Called by: render(), simulationGame().
-     *
-     * @param status the status to describe
-     */
+    /** Turns a status into words for the screen, such as "Won - all 52 cards completed". */
     public String statusText(GameStatus status) {
         return switch (status) {
             case RUNNING -> "In progress";
@@ -100,15 +69,8 @@ public final class ConsoleRenderer {
     }
 
     /**
-     * {@return the move as a sentence that names the card being moved, read from the board before the move is played}
-     * Examples: "Move [C-A] from T1 to the clubs foundation.", "Move [H-5] and the 2 cards on it from T3 to T6, onto
-     * [S-6]." A move to an empty column ends with "(empty)". Draw and recycle name no card, because the stock cards are
-     * still face down.
-     *
-     * <p>Called by: showMoves(), nextMove().
-     *
-     * @param move the move to describe
-     * @param board the board before the move is played
+     * Turns a move into a sentence for the player, such as "Move [H-5] from T2 to T4, onto [S-6].". It reads the board
+     * before the move is played, so it can name the card being moved and where it lands.
      */
     public String describeMove(Move move, GameState board) {
         if (move.type() == MoveType.DRAW) {
@@ -129,14 +91,7 @@ public final class ConsoleRenderer {
                 + landing + ".";
     }
 
-    /**
-     * Prints the LEGAL MOVES title and the moves numbered from 1, or a message if there are none.
-     *
-     * <p>Called by: GameController.manual().
-     *
-     * @param moves the legal moves, in the order the player will number them
-     * @param board the current board, used to name the cards in each move
-     */
+    /** Prints the LEGAL MOVES title and every move numbered from 1, or a message if there are no moves. */
     public void showMoves(List<Move> moves, GameState board) {
         section("LEGAL MOVES");
         if (moves.isEmpty()) {
@@ -148,84 +103,39 @@ public final class ConsoleRenderer {
         }
     }
 
-    /**
-     * Prints "Shuffle: " followed by the strategy's name, such as Random or In Faro.
-     *
-     * <p>Called by: GameController.playShuffled(), GameController.simulate().
-     *
-     * @param configuration the settings whose shuffle name is printed
-     */
+    /** Prints the name of the chosen shuffle, such as "Shuffle: Random". */
     public void shuffleConfiguration(ShuffleConfiguration configuration) {
         System.out.println("\nShuffle: " + configuration.type().strategy().name());
     }
 
-    /**
-     * Prints "Playing... (Draw 1)" or "Playing... (Draw 3)".
-     *
-     * <p>Called by: GameController.playShuffled(), GameController.simulate().
-     *
-     * @param drawCount cards turned per draw: 1 or 3
-     */
+    /** Prints "Playing..." with the draw mode, such as "Playing... (Draw 1)". */
     public void playing(int drawCount) {
         System.out.println("Playing... (Draw " + drawCount + ")");
     }
 
-    /**
-     * Prints "Next move: " and the move sentence in yellow. The board must be the one before the move is played, so the
-     * sentence names the card that is about to move.
-     *
-     * <p>Called by: GameController.replay().
-     *
-     * @param move the move about to be played
-     * @param board the board before the move is played
-     */
+    /** Prints the next move as a sentence in yellow. */
     public void nextMove(Move move, GameState board) {
         System.out.println("\nNext move: " + ConsoleColor.YELLOW.paint(describeMove(move, board)));
     }
 
-    /**
-     * Prints "Result: " followed by the detail, such as "Auto-play won the game".
-     *
-     * <p>Called by: GameController.playShuffled(), GameController.guaranteed().
-     *
-     * @param detail the text after "Result:"
-     */
+    /** Prints the result line of a game, such as "Result: Auto-play won the game". */
     public void resultDetail(String detail) {
         System.out.println("  Result: " + detail);
     }
 
-    /** Prints the heading "SOLITAIRE SIMULATION REPORT". Called by: GameController.simulate(). */
+    /** Prints the heading of the simulation report. */
     public void simulationStarted() {
         heading("SOLITAIRE SIMULATION REPORT");
     }
 
-    /**
-     * Prints one line for a simulated game, such as "Game 3 | Won - all 52 cards completed | Moves: 112".
-     *
-     * <p>Called by: GameController.simulate().
-     *
-     * @param gameNumber the game number, starting at 1
-     * @param status how the game ended
-     * @param moves how many moves were played
-     */
+    /** Prints one line for a simulated game with its number, its result, and its move count. */
     public void simulationGame(int gameNumber, GameStatus status, int moves) {
         System.out.printf(Locale.ROOT, "Game %d | %s | Moves: %d%n", gameNumber, statusText(status), moves);
     }
 
     /**
-     * Prints the games won and not solved (split into limit reached and no new moves), the win rate as a percentage,
-     * and the average moves per game, each with 2 decimal places.
-     *
-     * <p>Formula: win rate = 100.0 * won / count, and average moves = moves / count. The 100.0 (a double) makes the
-     * division keep its decimals; 100 * won / count would be integer division.
-     *
-     * <p>Called by: GameController.simulate().
-     *
-     * @param count how many games were played
-     * @param won games won
-     * @param limitedGames games that reached a limit
-     * @param stuckGames games that got stuck
-     * @param moves moves played in all games together
+     * Prints the simulation totals: games won and not solved, how many reached the limit or got stuck, the win rate as
+     * a percentage, and the average moves per game.
      */
     public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves) {
         section("RESULTS");
@@ -237,31 +147,19 @@ public final class ConsoleRenderer {
                 100.0 * won / count, (double) moves / count);
     }
 
-    /**
-     * Prints the elapsed time, converted from nanoseconds to seconds with 1 decimal place.
-     *
-     * <p>Called by: GameController.simulate().
-     *
-     * @param elapsedNanos the time taken, in nanoseconds
-     */
+    /** Converts the elapsed time from nanoseconds to seconds and prints it. */
     public void elapsed(long elapsedNanos) {
         System.out.printf(Locale.ROOT, "  Elapsed: %.1f seconds%n", elapsedNanos / 1_000_000_000.0);
     }
 
-    /** Prints "Thank you for playing!" when the player leaves the menu. Called by: GameController.shuffleAndPlay(). */
+    /** Prints "Thank you for playing!". */
     public void showClosingMessage() {
         System.out.println("Thank you for playing!");
     }
 
     /**
-     * Prints the seven columns side by side, one card per row, from the bottom card down to the top card.
-     *
-     * <p>Key idea: the number of rows is the height of the tallest column; shorter columns get blank cells, and an
-     * empty column shows an empty slot in the first row so it stays visible.
-     *
-     * <p>Called by: render().
-     *
-     * @param board the board whose columns are printed
+     * Prints the seven columns side by side, one row per card, from the bottom card down to the top card. An empty
+     * column shows an empty slot.
      */
     private void renderTableau(GameState board) {
         section("TABLEAU");
@@ -282,52 +180,24 @@ public final class ConsoleRenderer {
         }
     }
 
-    /**
-     * {@return the top card's text, or the empty slot if the pile is empty, followed by spaces up to width} Works for
-     * the waste and for every foundation.
-     *
-     * <p>Called by: render().
-     *
-     * @param pile the pile to show
-     * @param width the number of characters to fill
-     */
+    /** Returns the top card's text, or an empty slot if the pile has no cards, padded to the given width. */
     private static String topOrEmpty(CardPile pile, int width) {
         return pile.isEmpty() ? pad(EMPTY_SLOT, width) : showCard(pile.top(), width);
     }
 
-    /**
-     * {@return the card's text followed by spaces up to width} Face-up Hearts and Diamonds are red; Clubs, Spades, and
-     * face-down cards keep the terminal's normal color, so black suits stay readable on a dark background. The spaces
-     * are counted from the plain text, because the invisible color codes would otherwise break the column alignment.
-     *
-     * <p>Called by: renderTableau(), topOrEmpty().
-     *
-     * @param card the card to show
-     * @param width the number of characters to fill
-     */
+    /** Returns the card's text padded to the given width, in red if it is a face-up Heart or Diamond. */
     private static String showCard(Card card, int width) {
         String text = card.toString();
         String shown = card.isFaceUp() && card.isRed() ? ConsoleColor.RED.paint(text) : text;
         return shown + " ".repeat(Math.max(0, width - text.length()));
     }
 
-    /**
-     * {@return the text followed by spaces up to width} Text that is already longer is unchanged.
-     *
-     * <p>Called by: renderTableau(), topOrEmpty().
-     *
-     * @param text the text to pad
-     * @param width the number of characters to fill
-     */
+    /** Adds spaces after the text until it reaches the given width, so the columns line up. */
     private static String pad(String text, int width) {
         return text + " ".repeat(Math.max(0, width - text.length()));
     }
 
-    /**
-     * {@return "1 card" for 1 and "N cards" for any other number} Called by: describeMove().
-     *
-     * @param count the number of cards
-     */
+    /** Returns "1 card" for 1, or "N cards" for any other number. */
     private static String cardCount(int count) {
         return count + (count == 1 ? " card" : " cards");
     }

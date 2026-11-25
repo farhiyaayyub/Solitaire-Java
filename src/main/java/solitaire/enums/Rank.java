@@ -1,13 +1,8 @@
 package solitaire.enums;
 
 /**
- * The 13 card ranks.
- *
- * <p>Kind: enum.
- * <p>Purpose: it gives every card its rank, used by the placement rules, the card files, and the screen.
- * <p>Data: each constant stores a number value from 1 (Ace) to 13 (King), which the rules compare, and the symbol
- * used in card files and on screen.
- * <p>OOP: Encapsulation - value and symbol are private final fields, read through value() and symbol().
+ * The 13 card ranks from Ace to King. Each rank has a number value (Ace = 1, King = 13) used by the rules, and a symbol
+ * (A, 2 to 10, J, Q, K) used in card files and on screen.
  *
  * @author Farhiya Ayyub
  */
@@ -19,27 +14,21 @@ public enum Rank {
     private final int value;
     private final String symbol;
 
-    /**
-     * Runs once for each constant above.
-     *
-     * @param value the rank number, 1 (Ace) to 13 (King)
-     * @param symbol the text used in card files and on screen
-     */
+    /** Stores the number value and the symbol of one rank. */
     Rank(int value, String symbol) {
         this.value = value;
         this.symbol = symbol;
     }
 
     /**
-     * {@return 1 for Ace up to 13 for King} The rules compare these numbers ("one rank lower/higher").
-     *
-     * <p>Called by: Card.id(), FoundationPile.accepts(), TableauPile.fitsBelow(), ObservableBoard.observe().
+     * Returns the rank as a number, 1 for Ace up to 13 for King. The rules use it to check "one rank higher" or "one
+     * rank lower".
      */
     public int value() {
         return value;
     }
 
-    /** {@return A, 2 to 10, J, Q, or K} Called by: CardFileLoader.parseRank(), Card.code(). */
+    /** Returns the short text of the rank: A, 2 to 10, J, Q, or K. */
     public String symbol() {
         return symbol;
     }

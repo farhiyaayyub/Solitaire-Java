@@ -1,13 +1,8 @@
 package solitaire.enums;
 
 /**
- * The seven kinds of moves allowed in Klondike Solitaire.
- *
- * <p>Kind: enum.
- * <p>Purpose: every Move has a MoveType, which tells the validator, the game, and the display which piles it uses.
- * MoveGenerator lists legal moves in the order these constants are declared, so this order also fixes the order of
- * every generated move list.
- * <p>Data: none; only the constants.
+ * The seven kinds of moves in Klondike: between tableau columns, to and from the foundations, from the waste, drawing
+ * from the stock, and turning the waste back into the stock.
  *
  * @author Farhiya Ayyub
  */
@@ -18,15 +13,14 @@ public enum MoveType {
     WASTE_TO_TABLEAU,
     WASTE_TO_FOUNDATION,
     FOUNDATION_TO_TABLEAU,
-    /** Turns 1 or 3 cards (the draw mode) from the stock to the waste; fewer if the stock has fewer. */
+    /** Turns 1 or 3 cards (the draw mode) from the stock to the waste. */
     DRAW,
-    /** Turns the whole waste back into the stock; allowed only when the stock is empty. */
+    /** Turns the whole waste back into the stock. */
     RECYCLE;
 
     /**
-     * {@return {@code true} if this kind of move puts cards on a tableau column}
-     *
-     * <p>Called by: ConsoleRenderer.describeMove().
+     * Returns true if this kind of move puts cards on a tableau column (tableau-to-tableau, waste-to-tableau, or
+     * foundation-to-tableau).
      */
     public boolean endsOnTableau() {
         return this == TABLEAU_TO_TABLEAU || this == WASTE_TO_TABLEAU || this == FOUNDATION_TO_TABLEAU;

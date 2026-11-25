@@ -1,12 +1,8 @@
 package solitaire.io;
 
 /**
- * Console text colors.
- *
- * <p>Kind: enum.
- * <p>Purpose: colors text with ANSI escape codes. Used only for display, never by game logic.
- * <p>Data: each constant holds its ANSI escape code as a String, plus one shared reset code.
- * <p>OOP: Encapsulation - the escape codes are private; callers only use paint().
+ * Colors for console text using ANSI codes: cyan for section titles, yellow for the next move, and red for red cards
+ * and error messages.
  *
  * @author Farhiya Ayyub
  */
@@ -21,23 +17,12 @@ public enum ConsoleColor {
     private static final String RESET = "\u001B[0m";
     private final String escapeCode;
 
-    /**
-     * Stores the ANSI code of one constant.
-     *
-     * @param escapeCode the ANSI code that switches to this color
-     */
+    /** Stores the ANSI code of one color. */
     ConsoleColor(String escapeCode) {
         this.escapeCode = escapeCode;
     }
 
-    /**
-     * {@return the text between this color's code and the reset code}
-     *
-     * <p>Called by: ConsoleInput.showError(), ConsoleRenderer.section(), ConsoleRenderer.nextMove(),
-     * ConsoleRenderer.showCard(), SolitaireApplication.run().
-     *
-     * @param text the text to color
-     */
+    /** Wraps the text in this color's code and the reset code, so only that text is colored. */
     public String paint(String text) {
         return escapeCode + text + RESET;
     }

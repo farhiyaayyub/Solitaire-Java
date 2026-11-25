@@ -18,51 +18,23 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Card file reader.
- *
- * <p>Kind: final class, uses Deck, Card, Suit, and Rank.
- * <p>Purpose: reads a deck from a text file of suit-rank codes such as H-A or S-10, separated by spaces or new lines,
- * and reports every problem with its line number so the player can fix the file.
- * <p>Data: the Path of the card-files folder. load() collects cards in an ArrayList to keep the file order and in a
- * HashSet for a fast duplicate check.
- * <p>OOP: Abstraction - callers only call load(path) and get a Deck; the parsing steps are private. Encapsulation -
- * the card-files folder is passed in once (from solitaire.properties) and kept private.
+ * Reads a deck from a text file of card codes such as H-A or S-10. It checks every code and makes sure the file has
+ * exactly 52 different cards.
  *
  * @author Farhiya Ayyub
  */
 public final class CardFileLoader {
     private final Path cardFilesFolder;
 
-    /**
-     * Creates a loader that looks for bare file names, such as input.txt, in the given folder.
-     *
-     * <p>Called by: SolitaireApplication.run(), SolitaireApplication.getController().
-     *
-     * @param cardFilesFolder the folder searched when only a file name is given
-     * @throws NullPointerException if cardFilesFolder is {@code null}
-     */
+    /** Stores the folder where card files are looked for when the player types only a file name, such as input.txt. */
     public CardFileLoader(Path cardFilesFolder) {
         this.cardFilesFolder = Objects.requireNonNull(cardFilesFolder);
     }
 
     /**
-     * Reads the file and returns a deck in file order (the first code is drawn first). Lowercase codes are accepted.
-     *
-     * <p>Algorithm: line-by-line parsing.
-     * <ol>
-     *   <li>Find the file and read it one line at a time, counting line numbers for error messages.</li>
-     *   <li>Skip blank lines and remove an invisible byte-order mark from line 1.</li>
-     *   <li>Split each line on spaces and turn each code into a card.</li>
-     *   <li>Stop at the first duplicate, found with a HashSet.</li>
-     *   <li>After the last line, require exactly 52 cards.</li>
-     * </ol>
-     *
-     * <p>Called by: ConsoleInput.loadDeck(), SolitaireApplication.run().
-     *
-     * @param filePath the card file to read; a bare file name is also looked for in the card-files folder
-     * @return a deck of the 52 cards in file order
-     * @throws IOException if the file does not exist, is a folder, or cannot be read
-     * @throws IllegalArgumentException for an invalid code, a duplicate card, or a card count other than 52
+     * Reads the file line by line, splits each line into card codes, and turns each code into a card. It skips blank
+     * lines, rejects duplicate cards, and checks that there are exactly 52 cards. Returns the deck in file order, so
+     * the first code is drawn first.
      */
     public Deck load(Path filePath) throws IOException {
         Path resolvedPath = resolveFile(filePath);
@@ -97,13 +69,8 @@ public final class CardFileLoader {
     }
 
     /**
-     * {@return the path to read} If the path does not exist and is only a file name, such as input.txt, it is looked up
-     * in the card-files folder instead.
-     *
-     * <p>Called by: load().
-     *
-     * @param requestedPath the path the player typed
-     * @throws IOException if the result is a folder or does not exist
+     * Finds the file to read. If only a file name is given and it is not in the current folder, it looks in the
+     * card-files folder. Throws an error if the path is a folder or the file does not exist.
      */
     private Path resolveFile(Path requestedPath) throws IOException {
         Path resolvedPath = requestedPath;
@@ -122,13 +89,8 @@ public final class CardFileLoader {
     }
 
     /**
-     * {@return the card for one code, such as H-A or h-a}
-     *
-     * <p>Called by: load().
-     *
-     * @param token one card code from the file, such as "H-A"
-     * @param lineNumber the line in the file, used in error messages
-     * @throws IllegalArgumentException unless the code is exactly one suit and one rank joined by a single hyphen
+     * Turns one code such as H-A (upper or lower case) into a card. The code must be a suit and a rank separated by a
+     * dash; otherwise the error names the line.
      */
     private Card parseCard(String token, int lineNumber) {
         String normalizedToken = token.toUpperCase(Locale.ROOT);
@@ -142,15 +104,7 @@ public final class CardFileLoader {
         return new Card(suit, rank);
     }
 
-    /**
-     * {@return the suit with this code (H, D, C, or S)}
-     *
-     * <p>Called by: parseCard().
-     *
-     * @param suitCode the suit part of a card code, such as "H"
-     * @param lineNumber the line in the file, used in error messages
-     * @throws IllegalArgumentException with the line number for any other code
-     */
+    /** Returns the suit whose code matches (H, D, C, or S), or throws an error that names the line. */
     private Suit parseSuit(String suitCode, int lineNumber) {
         for (Suit suit : Suit.values()) {
             if (suit.code().equals(suitCode)) {
@@ -161,15 +115,7 @@ public final class CardFileLoader {
                 + ". Allowed: H, D, C, S.");
     }
 
-    /**
-     * {@return the rank with this symbol (A, 2 to 10, J, Q, or K)}
-     *
-     * <p>Called by: parseCard().
-     *
-     * @param rankSymbol the rank part of a card code, such as "10"
-     * @param lineNumber the line in the file, used in error messages
-     * @throws IllegalArgumentException with the line number for any other symbol
-     */
+    /** Returns the rank whose symbol matches (A, 2 to 10, J, Q, or K), or throws an error that names the line. */
     private Rank parseRank(String rankSymbol, int lineNumber) {
         for (Rank rank : Rank.values()) {
             if (rank.symbol().equals(rankSymbol)) {

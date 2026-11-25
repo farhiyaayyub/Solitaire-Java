@@ -1,25 +1,19 @@
 package solitaire;
 
 /**
- * Program entry point.
- *
- * <p>Kind: final class, uses SolitaireApplication.
- * <p>Purpose: starts the program and hands the command-line arguments to {@link SolitaireApplication}, which does
- * all the work.
- * <p>Data: none; it only starts SolitaireApplication.
+ * Starting point of the program. It only passes the command-line arguments to SolitaireApplication and closes the
+ * program with the exit code it returns.
  *
  * @author Farhiya Ayyub
  */
 public final class Main {
-    /** Prevents objects of this class; it only provides main(). */
+    /** Private constructor so no Main object can be created; the class only has the static main method. */
     private Main() {
     }
 
     /**
-     * Runs the application, then ends the Java process with its exit code: 0 (success), 1 (file or game error), or 2
-     * (invalid input). Started by the JVM.
-     *
-     * @param args the command-line arguments; the first one is the command
+     * Runs SolitaireApplication with the command-line arguments, then closes the program with its exit code: 0 for
+     * success, 1 for a file or game error, or 2 for invalid input.
      */
     public static void main(String[] args) {
         System.exit(SolitaireApplication.run(args));

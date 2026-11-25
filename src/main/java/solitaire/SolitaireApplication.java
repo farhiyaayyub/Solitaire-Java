@@ -16,16 +16,8 @@ import solitaire.solver.SolitaireSolver;
 import solitaire.solver.VisibleSolver;
 
 /**
- * Command-line front end that wires the program together.
- *
- * <p>Kind: final class with only static methods, uses GameConfig, GameController, CardFileLoader, ConsoleInput,
- * ConsoleRenderer, and VisibleSolver.
- * <p>Purpose: reads the command, builds the main objects, runs the command, and turns every kind of failure into an
- * exit code and a red error message. With no arguments it runs the interactive menu ("shuffle").
- * <p>Data: none; it only holds the three exit-code constants (0, 1, 2) and creates the objects inside run().
- * <p>OOP: Abstraction - the controller receives its solver as a SolitaireSolver, so another solver could be plugged
- * in here without changing GameController. Composition - this class creates the objects and passes each one what it
- * needs (dependency injection).
+ * Sets up and starts the program. It loads the settings, checks the command typed on the command line, builds the
+ * GameController, runs the chosen command, and turns any error into a red message and an exit code.
  *
  * @author Farhiya Ayyub
  */
@@ -36,19 +28,14 @@ public final class SolitaireApplication {
     // Position of --compact/--verbose for the guaranteed and random commands.
     private static final int OUTPUT_OPTION_INDEX = 1;
 
-    /** Prevents objects of this class; all its methods are static. */
+    /** Private constructor so no object can be created; all methods are static. */
     private SolitaireApplication() {
     }
 
     /**
-     * Loads the settings first, so a broken configuration file is reported before anything else, then checks the
-     * arguments and runs the command. A card-file error from validate is not followed by the usage text.
-     *
-     * <p>Called by: Main.main().
-     *
-     * @param args the command-line arguments; the first one is the command
-     * @return 0 on success, 1 for a file or game error, or 2 for invalid input or invalid settings (including a
-     *     number that cannot be parsed)
+     * Loads solitaire.properties, checks the arguments, builds the controller, and runs the command (menu, random,
+     * simulate, compare, manual, guaranteed, validate, or help). With no arguments it opens the menu. Any error is
+     * caught and printed in red, and the method returns 0, 1, or 2 as the exit code.
      */
     public static int run(String[] args) {
         GameConfig config;
@@ -101,15 +88,9 @@ public final class SolitaireApplication {
     }
 
     /**
-     * Builds the controller and its parts. The solver limits come from the settings, unless arguments 3 and 4
-     * (indexes 2 and 3) give them on the command line.
-     *
-     * <p>Called by: run().
-     *
-     * @param args the command-line arguments; the first one is the command
-     * @param input reads the player's answers
-     * @param config the settings from solitaire.properties
-     * @return a controller with a VisibleSolver, a ConsoleInput, and a ConsoleRenderer
+     * Creates the GameController with its three parts: a VisibleSolver with the move and time limits, a ConsoleInput
+     * for the keyboard, and a ConsoleRenderer for the screen. The limits come from the settings unless the command line
+     * gives them.
      */
     private static GameController getController(String[] args, Scanner input, GameConfig config) {
         SolitaireSolver.Limits limits = new SolitaireSolver.Limits(
@@ -121,14 +102,8 @@ public final class SolitaireApplication {
     }
 
     /**
-     * Checks the argument count for each command and the --compact/--verbose option, so no game starts with a typo.
-     *
-     * <p>Called by: run().
-     *
-     * @param command the command name, such as "random"
-     * @param args all command-line arguments, including the command
-     * @throws IllegalArgumentException for an unknown command, too many arguments, a validate command without exactly
-     *     one file, or an output option other than --compact or --verbose
+     * Checks the command before anything runs: the command must exist, it must not have too many arguments, validate
+     * needs exactly one file, and the output option may only be --compact or --verbose. Otherwise it throws an error.
      */
     private static void validateArguments(String command, String[] args) {
         if (command.equals("validate") && args.length != 2) {
@@ -154,44 +129,21 @@ public final class SolitaireApplication {
         }
     }
 
-    /**
-     * {@return {@code true} only if the output option (argument index 1) exists and is exactly --compact}
-     *
-     * <p>Called by: run().
-     *
-     * @param args the command-line arguments; the first one is the command
-     */
+    /** Returns true when the second argument is --compact, meaning only the final board should be printed. */
     private static boolean hasCompactOption(String[] args) {
         return args.length > OUTPUT_OPTION_INDEX && args[OUTPUT_OPTION_INDEX].equals("--compact");
     }
 
     /**
-     * {@return the argument at the index as an int, or the default when the argument is missing}
-     *
-     * <p>Called by: run(), getController().
-     *
-     * @param args the command-line arguments; the first one is the command
-     * @param index the position of the argument
-     * @param defaultValue the value to use when the argument is missing
-     * @throws IllegalArgumentException if the argument is not a whole number; the message names the argument
+     * Reads the argument at the given position as an int, or returns the default value if the argument was not typed.
      */
     private static int intArgument(String[] args, int index, int defaultValue) {
         return (int) numberArgument(args, index, defaultValue, Integer.MAX_VALUE);
     }
 
     /**
-     * {@return the argument at the index as a whole number, or the default when it is missing}
-     *
-     * <p>Key idea: Java's own parse error ("For input string: ...") is replaced by a message that names the command,
-     * the argument, and the wrong value, so the player knows what to fix.
-     *
-     * <p>Called by: intArgument(), getController().
-     *
-     * @param args the command-line arguments; the first one is the command
-     * @param index the position of the argument
-     * @param defaultValue the value to use when the argument is missing
-     * @param maximum the largest accepted value
-     * @throws IllegalArgumentException if the argument is not a whole number or is larger than the maximum
+     * Reads the argument at the given position as a whole number, or returns the default value if it is missing. If it
+     * is not a number or is too large, it throws an error that names the command and the wrong value.
      */
     private static long numberArgument(String[] args, int index, long defaultValue, long maximum) {
         if (args.length <= index) {
@@ -210,7 +162,7 @@ public final class SolitaireApplication {
         return value;
     }
 
-    /** Prints every command with its optional arguments in brackets. Called by: run(). */
+    /** Prints the list of commands and their optional arguments. */
     private static void printUsage() {
         System.out.println("""
                 Commands:

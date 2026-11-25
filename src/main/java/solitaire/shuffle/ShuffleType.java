@@ -1,12 +1,8 @@
 package solitaire.shuffle;
 
 /**
- * The shuffle choices offered to the player.
- *
- * <p>Kind: enum.
- * <p>Purpose: it connects a menu choice to the object that does that shuffle, through type.strategy().
- * <p>Data: each constant stores one ShuffleStrategy object.
- * <p>OOP: Polymorphism - strategy() returns the shuffle as the ShuffleStrategy interface, whatever its actual class.
+ * The shuffle choices the player can pick: Random, In-Faro, Out-Faro, or None. Each choice holds the shuffle object
+ * that does the work.
  *
  * @author Farhiya Ayyub
  */
@@ -15,34 +11,22 @@ public enum ShuffleType {
     RANDOM(new RandomShuffle()),
     IN(new InFaroShuffle()),
     OUT(new OutFaroShuffle()),
-    /** Keeps the order; offered only for a deck loaded from a file. */
+    /** Keeps the card order exactly as given. */
     NONE(new NoShuffle());
 
     private final ShuffleStrategy strategy;
 
-    /**
-     * Runs once for each constant above.
-     *
-     * @param strategy the object that does this shuffle
-     */
+    /** Stores the shuffle object of one choice. */
     ShuffleType(ShuffleStrategy strategy) {
         this.strategy = strategy;
     }
 
-    /**
-     * {@return the shuffle object for this choice}
-     *
-     * <p>Called by: ConsoleRenderer.shuffleConfiguration(), ShuffleConfiguration.prepareDeck(Deck).
-     */
+    /** Returns the shuffle object for this choice. */
     public ShuffleStrategy strategy() {
         return strategy;
     }
 
-    /**
-     * {@return {@code true} for IN and OUT, the two perfect (Faro) shuffles; {@code false} for RANDOM and NONE}
-     *
-     * <p>Called by: ShuffleConfiguration(ShuffleType, boolean), ConsoleInput.shuffleConfiguration().
-     */
+    /** Returns true for IN and OUT, the two perfect (Faro) shuffles, and false for RANDOM and NONE. */
     public boolean isFaro() {
         return this == IN || this == OUT;
     }

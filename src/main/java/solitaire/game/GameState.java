@@ -18,15 +18,8 @@ import solitaire.pile.TableauPile;
 import solitaire.pile.WastePile;
 
 /**
- * The board of one Klondike game.
- *
- * <p>Kind: final class, made of StockPile, WastePile, TableauPile, and FoundationPile objects.
- * <p>Purpose: it holds the stock, the waste, seven tableau columns, four foundations, and the draw mode. Its piles can
- * change so moves can be applied; SolitaireGame protects its own board by handing out copies only.
- * <p>Data: the draw mode, the stock, the waste, seven TableauPiles in a List (columns are numbered 0-6, so index
- * access fits), and the four foundations in an EnumMap keyed by Suit (one pile per suit, fast and in suit order).
- * <p>OOP: Composition - a board is made of pile objects. Encapsulation - the constructor is private, so a board only
- * comes from deal() or copy(). Polymorphism - sourcePile() and destinationPile() return any pile as a CardPile.
+ * The whole board of one Klondike game: the stock, the waste, the seven tableau columns, the four foundations, and the
+ * draw mode (1 or 3). It can deal a new board from a deck, make a full copy of itself, and check that no card was lost.
  *
  * @author Farhiya Ayyub
  */
@@ -44,18 +37,7 @@ public final class GameState {
     private final List<TableauPile> tableau;
     private final Map<Suit, FoundationPile> foundations;
 
-    /**
-     * Stores already-created piles after checking the draw mode.
-     *
-     * <p>Called by: deal(Deck, int), copy().
-     *
-     * @param drawCount cards turned per draw: 1 or 3
-     * @param stock the stock pile
-     * @param waste the waste pile
-     * @param tableau the seven tableau columns
-     * @param foundations the four foundations, keyed by suit
-     * @throws IllegalArgumentException if drawCount is not 1 or 3
-     */
+    /** Stores the piles of a board after checking that the draw mode is 1 or 3. */
     private GameState(int drawCount, StockPile stock, WastePile waste, List<TableauPile> tableau,
                       Map<Suit, FoundationPile> foundations) {
         if (drawCount != DRAW_ONE && drawCount != DRAW_THREE) {
@@ -68,33 +50,14 @@ public final class GameState {
         this.foundations = foundations;
     }
 
-    /**
-     * {@return a new Draw 1 board dealt from the deck}
-     *
-     * <p>Called by: GameController.manual(), SolvableDealProvider.create().
-     *
-     * @param deck the deck to deal from, already in the wanted order; it is emptied
-     */
+    /** Deals a new Draw 1 board from the deck. */
     public static GameState deal(Deck deck) {
         return deal(deck, DRAW_ONE);
     }
 
     /**
-     * {@return a new board dealt from the deck in its current order} The deck is emptied, so shuffle it first if
-     * needed.
-     *
-     * <p>Algorithm: Klondike deal.
-     * <ol>
-     *   <li>Column 1 to 7 gets 1, 2, ..., 7 cards (28 in total); only each top card is face up.</li>
-     *   <li>The remaining 24 cards go to the stock, face down.</li>
-     *   <li>The waste and the four foundations start empty.</li>
-     *   <li>verify() confirms the board holds 52 unique cards.</li>
-     * </ol>
-     *
-     * <p>Called by: GameController.playShuffled(), GameController.simulate(), deal(Deck).
-     *
-     * @param deck the deck to deal from, already in the wanted order
-     * @param drawCount cards turned per draw: 1 or 3
+     * Deals a new board from the deck: 1 card to column 1, 2 cards to column 2, and so on up to 7 cards, with only the
+     * top card of each column face up. The remaining 24 cards go to the stock, and the four foundations start empty.
      */
     public static GameState deal(Deck deck, int drawCount) {
         List<TableauPile> tableau = new ArrayList<>();
@@ -118,65 +81,37 @@ public final class GameState {
         return state;
     }
 
-    /**
-     * {@return the draw mode: 1 or 3 cards per draw}
-     *
-     * <p>Called by: ConsoleRenderer.render(), MoveGenerator.addLegalMoves(), MoveValidator.isLegalDraw(),
-     * ObservableBoard.from().
-     */
+    /** Returns how many cards one draw turns over: 1 or 3. */
     public int drawCount() {
         return drawCount;
     }
 
-    /**
-     * {@return the real stock pile, not a copy} Changing it changes this board.
-     *
-     * <p>Called by: SolitaireGame.applyLegalMove(), ConsoleRenderer.render(), MoveGenerator.addLegalMoves(),
-     * MoveValidator.isLegal(), MoveValidator.isLegalDraw(), ObservableBoard.from(), SolvableDealProvider.create().
-     */
+    /** Returns the stock pile itself, not a copy, so changing it changes this board. */
     public StockPile stock() {
         return stock;
     }
 
-    /**
-     * {@return the real waste pile, not a copy} Changing it changes this board.
-     *
-     * <p>Called by: SolitaireGame.applyLegalMove(), ConsoleRenderer.render(), MoveValidator.isLegal(),
-     * ObservableBoard.from().
-     */
+    /** Returns the waste pile itself, not a copy, so changing it changes this board. */
     public WastePile waste() {
         return waste;
     }
 
     /**
-     * {@return the seven columns, index 0 (T1) to 6 (T7)} The list cannot be resized, but each column is the real
-     * pile, so its cards can still be moved.
-     *
-     * <p>Called by: SolitaireGame.applyLegalMove(), ConsoleRenderer.renderTableau(), MoveGenerator.addLegalMoves(),
-     * MoveValidator.isLegalTableauTransfer(), ObservableBoard.from().
+     * Returns the seven tableau columns, index 0 (T1) to 6 (T7). The list cannot be resized, but the columns in it are
+     * the real piles.
      */
     public List<TableauPile> tableau() {
         return Collections.unmodifiableList(tableau);
     }
 
-    /**
-     * {@return the real foundation pile for the suit}
-     *
-     * <p>Called by: sourcePile(), destinationPile(), copy(), ConsoleRenderer.render(), ObservableBoard.from().
-     *
-     * @param suit the suit of the wanted foundation
-     */
+    /** Returns the foundation pile of the given suit. */
     public FoundationPile foundation(Suit suit) {
         return foundations.get(suit);
     }
 
     /**
-     * {@return the pile the move takes cards from} A foundation index is turned into its Suit.
-     *
-     * <p>Called by: SolitaireGame.applyLegalMove(), ConsoleRenderer.describeMove(),
-     * MoveValidator.isLegalSingleCardMove().
-     *
-     * @param move the move to use
+     * Returns the pile a move takes cards from, based on its type: the stock for a draw, the waste for a waste move or
+     * a recycle, a column for a tableau move, or a foundation.
      */
     public CardPile sourcePile(Move move) {
         return switch (move.type()) {
@@ -188,12 +123,8 @@ public final class GameState {
     }
 
     /**
-     * {@return the pile the move puts cards on} A draw goes to the waste and a recycle goes back to the stock.
-     *
-     * <p>Called by: SolitaireGame.applyLegalMove(), ConsoleRenderer.describeMove(),
-     * MoveValidator.isLegalSingleCardMove().
-     *
-     * @param move the move to use
+     * Returns the pile a move puts cards on, based on its type: the waste for a draw, the stock for a recycle, a
+     * column, or a foundation.
      */
     public CardPile destinationPile(Move move) {
         return switch (move.type()) {
@@ -204,28 +135,20 @@ public final class GameState {
         };
     }
 
-    /** {@return the total number of cards on the four foundations, 0 to 52} Called by: won(). */
+    /** Adds up the cards on all four foundations and returns the total, from 0 to 52. */
     public int foundationCount() {
         return foundations.values().stream().mapToInt(CardPile::size).sum();
     }
 
-    /**
-     * {@return {@code true} only when all 52 cards are on the foundations and every other pile is empty}
-     *
-     * <p>Called by: GameController.manual(), SolitaireGame(GameState), SolitaireGame.finish(), SolitaireGame.play(),
-     * SolvableDealProvider.create(), VisibleSolver.solve().
-     */
+    /** Returns true when all 52 cards are on the foundations and the stock, the waste, and every column are empty. */
     public boolean won() {
         return foundationCount() == Deck.CARD_COUNT && stock.isEmpty() && waste.isEmpty()
                 && tableau.stream().allMatch(CardPile::isEmpty);
     }
 
     /**
-     * {@return a deep copy of the board, including each card's face-up flag} Moves played on the copy do not affect
-     * this board.
-     *
-     * <p>Called by: SolitaireGame(GameState), SolitaireGame.state(), SolvableDealProvider.VerifiedDeal(),
-     * SolvableDealProvider.VerifiedDeal.state(), SolvableDealProvider.create().
+     * Makes a full copy of the board, copying every pile and card. Moves played on the copy do not change the original,
+     * so the solver can play without touching the real game.
      */
     public GameState copy() {
         List<TableauPile> tableauCopy = new ArrayList<>();
@@ -240,14 +163,8 @@ public final class GameState {
     }
 
     /**
-     * Checks that the board still holds exactly 52 different cards; a failure means a move lost or duplicated a card.
-     *
-     * <p>Key idea: all cards are collected into one list; the list and a HashSet made from it must both have 52
-     * entries, because a duplicate makes the set smaller. This takes O(n) time.
-     *
-     * <p>Called by: deal(Deck, int), SolitaireGame(GameState), SolitaireGame.play(), SolvableDealProvider.create().
-     *
-     * @throws IllegalStateException unless the board holds exactly 52 cards and no two are equal
+     * Collects the cards from every pile and checks that there are exactly 52 and none appears twice. Throws an error
+     * if a card was lost or duplicated.
      */
     public void verify() {
         List<Card> allCards = new ArrayList<>(stock.cards());

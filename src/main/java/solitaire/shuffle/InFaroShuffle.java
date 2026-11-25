@@ -1,24 +1,18 @@
 package solitaire.shuffle;
 
 /**
- * In-Faro shuffle.
- *
- * <p>Kind: final class, extends FaroShuffle.
- * <p>Purpose: it interleaves starting with the second half, so the original top card moves to position 2.
- * <p>Data: none; it only answers startsWithSecondHalf() and name().
- * <p>OOP: Inheritance - it reuses FaroShuffle.shuffle(). Polymorphism - it overrides startsWithSecondHalf() and
- * name().
+ * In-Faro shuffle: the interleaving starts with the second half, so the original top card moves to second place.
  *
  * @author Farhiya Ayyub
  */
 public final class InFaroShuffle extends FaroShuffle {
-    /** {@return {@code true}} Called by: FaroShuffle.shuffle(). */
+    /** Returns true, so the first card comes from the second half of the deck. */
     @Override
     protected boolean startsWithSecondHalf() {
         return true;
     }
 
-    /** {@return "In Faro"} Called by: ConsoleRenderer.shuffleConfiguration() (through ShuffleStrategy). */
+    /** Returns "In Faro", the name shown to the player. */
     @Override
     public String name() {
         return "In Faro";
