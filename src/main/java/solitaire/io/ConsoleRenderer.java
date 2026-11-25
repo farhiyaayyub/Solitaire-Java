@@ -14,8 +14,7 @@ import solitaire.pile.CardPile;
 import solitaire.shuffle.ShuffleConfiguration;
 
 /**
- * Prints everything the player sees: the board, the legal moves, each move as a sentence, the results, and the
- * simulation reports. All screen output of the game goes through this class.
+ * Prints everything the player sees: the board, the moves, the results, and the simulation reports.
  *
  * @author Farhiya Ayyub
  */
@@ -38,11 +37,13 @@ public final class ConsoleRenderer {
      */
     public void render(SolitaireGame game) {
         GameState board = game.state();
+        // Part 1: the stock (always shown face down) and the waste top card, with how many cards each has.
         section("STOCK & WASTE");
         System.out.println("  Draw " + board.drawCount());
         System.out.printf("  Stock: %s  (%d cards)    Waste: %s  (%d cards)%n",
                 board.stock().isEmpty() ? EMPTY_SLOT : "[XX]", board.stock().size(),
                 topOrEmpty(board.waste(), 0), board.waste().size());
+        // Part 2: the four foundations; first a row with the suit names, then a row with their top cards.
         section("FOUNDATIONS (Ace to King)");
         System.out.print("  ");
         for (Suit suit : Suit.values()) {
@@ -53,7 +54,9 @@ public final class ConsoleRenderer {
             System.out.print(topOrEmpty(board.foundation(suit), 17));
         }
         System.out.println();
+        // Part 3: the seven columns.
         renderTableau(board);
+        // Part 4: the legend, then the move count and the status.
         System.out.println("\n  [XX] Face down    " + EMPTY_SLOT + " Empty pile");
         System.out.println("\n  Moves: " + game.moves() + " | " + statusText(game.status()));
     }
@@ -61,9 +64,13 @@ public final class ConsoleRenderer {
     /** Turns a status into words for the screen, such as "Won - all 52 cards completed". */
     public String statusText(GameStatus status) {
         return switch (status) {
+            // The game is still being played.
             case RUNNING -> "In progress";
+            // All cards reached the foundations.
             case WON -> "Won - all 52 cards completed";
+            // The solver tried every move.
             case STUCK -> "Not solved - no new move to try";
+            // The solver ran out of moves or time.
             case LIMIT_REACHED -> "Not solved - play limit reached";
         };
     }
@@ -73,18 +80,22 @@ public final class ConsoleRenderer {
      * before the move is played, so it can name the card being moved and where it lands.
      */
     public String describeMove(Move move, GameState board) {
+        // A draw and a recycle have simple fixed sentences.
         if (move.type() == MoveType.DRAW) {
             return "Draw " + cardCount(move.count()) + " from the stock to the waste.";
         }
         if (move.type() == MoveType.RECYCLE) {
             return "Return the waste cards to the stock.";
         }
+        // Every other move: find the piles the cards leave and land on.
         CardPile from = board.sourcePile(move);
         CardPile to = board.destinationPile(move);
         // For a run of cards this is the lowest one, the card that must fit on the destination.
         Card moving = from.get(from.size() - move.count());
+        // One card is named on its own; a run is named as "card and the N cards on it".
         String cards = move.count() == 1 ? moving.toString()
                 : moving + " and the " + cardCount(move.count() - 1) + " on it";
+        // For a move to a column, say whether the column is empty or name the card it lands on.
         String landing = move.type().endsOnTableau() ? (to.isEmpty() ? " (empty)" : ", onto " + to.top()) : "";
         // name() is the method of the actual pile (polymorphism), so no check of the pile's class is needed.
         return "Move " + cards + " from " + from.name(move.source()) + " to " + to.name(move.destination())
@@ -94,10 +105,12 @@ public final class ConsoleRenderer {
     /** Prints the LEGAL MOVES title and every move numbered from 1, or a message if there are no moves. */
     public void showMoves(List<Move> moves, GameState board) {
         section("LEGAL MOVES");
+        // No moves left means the game is over.
         if (moves.isEmpty()) {
             System.out.println("  No legal moves available. Game ended.");
             return;
         }
+        // Print each move with a number, starting from 1.
         for (int moveIndex = 0; moveIndex < moves.size(); moveIndex++) {
             System.out.printf("  [%2d] %s%n", moveIndex + 1, describeMove(moves.get(moveIndex), board));
         }
@@ -139,6 +152,7 @@ public final class ConsoleRenderer {
      */
     public void simulationSummary(int count, int won, int limitedGames, int stuckGames, long moves) {
         section("RESULTS");
+        // Win rate = 100 x won / games; average moves = total moves / games.
         System.out.printf(Locale.ROOT,
                 "  Games: %d | Won: %d | Not solved: %d%n"
                         + "  Limit reached: %d | No new moves: %d | Win rate: %.2f%%%n"
@@ -149,6 +163,7 @@ public final class ConsoleRenderer {
 
     /** Converts the elapsed time from nanoseconds to seconds and prints it. */
     public void elapsed(long elapsedNanos) {
+        // 1 second = 1,000,000,000 nanoseconds.
         System.out.printf(Locale.ROOT, "  Elapsed: %.1f seconds%n", elapsedNanos / 1_000_000_000.0);
     }
 
@@ -163,16 +178,20 @@ public final class ConsoleRenderer {
      */
     private void renderTableau(GameState board) {
         section("TABLEAU");
+        // Print the column names T1 to T7.
         System.out.print("  ");
         for (int column = 1; column <= GameState.TABLEAU_COLUMNS; column++) {
             System.out.printf("%-9s", "T" + column);
         }
         System.out.println();
+        // Get the cards of each column, and find how many rows the tallest column needs.
         List<List<Card>> columns = board.tableau().stream().map(CardPile::cards).toList();
         int rows = columns.stream().mapToInt(List::size).max().orElse(0);
+        // Print row by row; each row shows the card at that height in every column, or blank space.
         for (int row = 0; row < Math.max(1, rows); row++) {
             System.out.print("  ");
             for (List<Card> column : columns) {
+                // An empty column shows the empty slot in the first row only.
                 System.out.print(row < column.size() ? showCard(column.get(row), 9)
                         : pad(row == 0 ? EMPTY_SLOT : "", 9));
             }
@@ -188,7 +207,9 @@ public final class ConsoleRenderer {
     /** Returns the card's text padded to the given width, in red if it is a face-up Heart or Diamond. */
     private static String showCard(Card card, int width) {
         String text = card.toString();
+        // Only face-up red cards are colored red.
         String shown = card.isFaceUp() && card.isRed() ? ConsoleColor.RED.paint(text) : text;
+        // Pad using the plain text length, because the color codes take no space on screen.
         return shown + " ".repeat(Math.max(0, width - text.length()));
     }
 

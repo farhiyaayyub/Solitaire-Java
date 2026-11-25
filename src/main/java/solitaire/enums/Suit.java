@@ -1,8 +1,7 @@
 package solitaire.enums;
 
 /**
- * The four card suits. Each suit has a one-letter code for card files, a symbol for the screen, and a color: Hearts and
- * Diamonds are red, Clubs and Spades are black.
+ * The four card suits. Each suit has a letter code for card files, a symbol for the screen, and a color.
  *
  * @author Farhiya Ayyub
  */

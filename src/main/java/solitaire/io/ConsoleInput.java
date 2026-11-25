@@ -14,9 +14,7 @@ import solitaire.shuffle.ShuffleConfiguration;
 import solitaire.shuffle.ShuffleType;
 
 /**
- * Asks the player questions in the console and reads the answers: the deck source, the card file, the shuffle, the draw
- * mode, the play mode, the number of games, and the moves in manual play. It repeats a question until the answer is
- * valid, and q always exits.
+ * Asks the player questions in the console and reads the answers, asking again until the answer is valid.
  *
  * @author Farhiya Ayyub
  */
@@ -36,6 +34,7 @@ public final class ConsoleInput {
     public ConsoleInput(Scanner scanner, CardFileLoader cardFileLoader, int maxGameCount) {
         this.scanner = Objects.requireNonNull(scanner);
         this.cardFileLoader = Objects.requireNonNull(cardFileLoader);
+        // The game limit must allow at least 1 game.
         if (maxGameCount < 1) {
             throw new IllegalArgumentException("The maximum game count must be at least 1");
         }
@@ -54,18 +53,23 @@ public final class ConsoleInput {
      * again. Returns the deck, or null if the player types q.
      */
     public Deck loadDeck() {
+        // Keep asking until a deck loads or the player types q.
         while (true) {
             String fileName = readExact("\nType the card file name (for example input.txt), or q to exit:\n> ");
+            // q means the player wants to leave.
             if (fileName.equalsIgnoreCase(CANCEL)) {
                 return null;
             }
+            // Try to load the file; if it works, return the deck.
             try {
                 Deck deck = cardFileLoader.load(Path.of(fileName));
                 System.out.println("  OK - loaded 52 unique cards from " + fileName + ".");
                 return deck;
             } catch (IOException | InvalidPathException exception) {
+                // The file could not be found or opened.
                 showError("File error: " + exception.getMessage());
             } catch (IllegalArgumentException exception) {
+                // The file was read, but its cards are wrong.
                 showError("Invalid card file: " + exception.getMessage());
             }
             showError("Please check the file name and try again.");
@@ -77,14 +81,19 @@ public final class ConsoleInput {
      * In-Faro or Out-Faro. Returns the chosen settings, or null if the player types q.
      */
     public ShuffleConfiguration shuffleConfiguration(boolean deckFromFile) {
+        // A file deck gets a third option: keep the file order.
         String selected = deckFromFile
                 ? menu("Choose how to shuffle", "123", RANDOM_OPTION, PERFECT_OPTION,
                         "[3] No shuffle       - keep the exact card order from the file")
                 : menu("Choose how to shuffle", "12", RANDOM_OPTION, PERFECT_OPTION);
         ShuffleType type;
+        // Turn the answer into a shuffle type.
         switch (selected) {
+            // 1: random shuffle.
             case "1" -> type = ShuffleType.RANDOM;
+            // 3: no shuffle.
             case "3" -> type = ShuffleType.NONE;
+            // 2: perfect shuffle, so also ask which one; q returns null.
             case "2" -> {
                 String faro = menu("Which perfect shuffle?", "12",
                         "[1] In-Faro   - the top card moves to 2nd place",
@@ -94,10 +103,12 @@ public final class ConsoleInput {
                 }
                 type = faro.equals("1") ? ShuffleType.IN : ShuffleType.OUT;
             }
+            // Anything else is q, so return null.
             default -> {
                 return null;
             }
         }
+        // A standard deck is randomized first before a Faro shuffle; a file deck keeps its own order.
         return new ShuffleConfiguration(type, type.isFaro() && !deckFromFile);
     }
 
@@ -106,6 +117,7 @@ public final class ConsoleInput {
         String selected = menu("How many cards to turn from the stock each time?", "13",
                 "[1] Draw 1  - turn 1 card at a time",
                 "[3] Draw 3  - turn 3 cards at a time");
+        // q gives 0; otherwise turn "1" or "3" into a number.
         return selected.equals(CANCEL) ? 0 : Integer.parseInt(selected);
     }
 
@@ -121,11 +133,14 @@ public final class ConsoleInput {
      * if the player types q.
      */
     public int gameCount() {
+        // Keep asking until the answer is valid or q.
         while (true) {
             String value = read("\nHow many games should be played? (1 to " + maxGameCount + "), or q to exit:\n> ");
+            // q means the player wants to leave.
             if (value.equals(CANCEL)) {
                 return 0;
             }
+            // Try to read a number; if it is in range, return it.
             try {
                 int count = Integer.parseInt(value);
                 if (count >= 1 && count <= maxGameCount) {
@@ -153,9 +168,11 @@ public final class ConsoleInput {
      * number, and returns null if the player types q or there are no moves.
      */
     public Move selectMove(List<Move> moves) {
+        // No legal moves means there is nothing to choose.
         if (moves.isEmpty()) {
             return null;
         }
+        // Keep asking until a listed number or q is typed.
         while (true) {
             String input = read("\nChoose a move number, or q to exit:\n> ");
             if (input.equals(CANCEL)) {
@@ -164,11 +181,13 @@ public final class ConsoleInput {
             try {
                 // The player counts from 1; the list counts from 0.
                 int selectedIndex = Integer.parseInt(input) - 1;
+                // If the number is in the list, return that move.
                 if (selectedIndex >= 0 && selectedIndex < moves.size()) {
                     return moves.get(selectedIndex);
                 }
                 showError("Invalid selection. Enter a listed move number.");
             } catch (NumberFormatException invalidNumber) {
+                // The answer was not a number.
                 showError("Enter a whole-number move choice, or q to exit.");
             }
         }
@@ -176,11 +195,13 @@ public final class ConsoleInput {
 
     /** Builds a menu from the title and the options, adds [q] Exit, and returns the player's valid choice. */
     private String menu(String title, String allowedChoices, String... options) {
+        // Build the text: the title, one option per line, then [q] Exit.
         StringBuilder prompt = new StringBuilder("\n").append(title).append('\n');
         for (String option : options) {
             prompt.append("  ").append(option).append('\n');
         }
         prompt.append("  [q] Exit\nType your choice and press Enter:\n> ");
+        // Show it and wait for a valid answer.
         return choice(prompt.toString(), allowedChoices);
     }
 
@@ -188,9 +209,11 @@ public final class ConsoleInput {
     private String choice(String prompt, String allowedChoices) {
         while (true) {
             String input = read(prompt);
+            // Accept q, or exactly one character that is in the allowed list.
             if (input.equals(CANCEL) || (input.length() == 1 && allowedChoices.contains(input))) {
                 return input;
             }
+            // Otherwise show the allowed answers and ask again.
             showError("\"" + input + "\" is not an option. Type one of: "
                     + String.join(", ", allowedChoices.split("")) + ", or q.");
         }
@@ -212,6 +235,7 @@ public final class ConsoleInput {
      */
     private String readExact(String prompt) {
         System.out.print(prompt);
+        // If the input has ended (for example, the keyboard stream closed), act as if q was typed.
         return scanner.hasNextLine() ? scanner.nextLine().trim() : CANCEL;
     }
 }

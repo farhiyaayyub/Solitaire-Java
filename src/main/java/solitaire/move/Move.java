@@ -3,8 +3,7 @@ package solitaire.move;
 import solitaire.enums.MoveType;
 
 /**
- * One move in the game, stored as four values: the move type, the source index, the destination index, and how many
- * cards move. Indexes count from 0, so column 0 is T1.
+ * One move in the game: its type, where the cards come from, where they go, and how many cards move.
  *
  * @author Farhiya Ayyub
  */
@@ -16,6 +15,7 @@ public record Move(MoveType type, int source, int destination, int count) {
      */
     @Override
     public String toString() {
+        // Indexes are stored from 0, so add 1 to show them the way a person counts.
         return type + " source=" + (source + 1) + " destination=" + (destination + 1) + " cards=" + count;
     }
 }

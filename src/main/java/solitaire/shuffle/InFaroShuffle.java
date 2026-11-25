@@ -1,7 +1,7 @@
 package solitaire.shuffle;
 
 /**
- * In-Faro shuffle: the interleaving starts with the second half, so the original top card moves to second place.
+ * The In-Faro shuffle, which starts the interleaving with the second half of the deck.
  *
  * @author Farhiya Ayyub
  */

@@ -6,8 +6,7 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * A perfect (Faro) shuffle: it cuts the deck into two equal halves and interleaves them one card at a time. The In and
- * Out versions differ only in which half gives the first card.
+ * A perfect (Faro) shuffle. It cuts the deck in half and interleaves the two halves one card at a time.
  *
  * @author Farhiya Ayyub
  */
@@ -22,17 +21,22 @@ public abstract class FaroShuffle implements ShuffleStrategy {
      */
     @Override
     public List<Card> shuffle(List<Card> cards) {
+        // An odd number of cards cannot be cut into two equal halves, so stop with an error.
         if (cards.size() % 2 != 0) {
             throw new IllegalArgumentException("A Faro shuffle requires an even number of cards");
         }
 
+        // With 52 cards, the first half is cards 0 to 25 and the second half is cards 26 to 51.
         int half = cards.size() / 2;
         List<Card> result = new ArrayList<>(cards.size());
+        // Ask the subclass which half goes first (In-Faro: second half, Out-Faro: first half).
         boolean secondFirst = startsWithSecondHalf();
+        // Take card number index from each half in turn: one from the first-chosen half, then one from the other.
         for (int index = 0; index < half; index++) {
             result.add(cards.get((secondFirst ? half : 0) + index));
             result.add(cards.get((secondFirst ? 0 : half) + index));
         }
+        // Return the new order as a list that cannot be changed.
         return List.copyOf(result);
     }
 }

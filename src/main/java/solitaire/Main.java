@@ -1,8 +1,7 @@
 package solitaire;
 
 /**
- * Starting point of the program. It only passes the command-line arguments to SolitaireApplication and closes the
- * program with the exit code it returns.
+ * The starting point of the program. It calls SolitaireApplication.run() and closes the program with its exit code.
  *
  * @author Farhiya Ayyub
  */
@@ -16,6 +15,7 @@ public final class Main {
      * success, 1 for a file or game error, or 2 for invalid input.
      */
     public static void main(String[] args) {
+        // Run the whole program, then end Java with the exit code that run() returns.
         System.exit(SolitaireApplication.run(args));
     }
 }

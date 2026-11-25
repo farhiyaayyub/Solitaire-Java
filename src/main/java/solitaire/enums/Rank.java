@@ -1,8 +1,7 @@
 package solitaire.enums;
 
 /**
- * The 13 card ranks from Ace to King. Each rank has a number value (Ace = 1, King = 13) used by the rules, and a symbol
- * (A, 2 to 10, J, Q, K) used in card files and on screen.
+ * The 13 card ranks from Ace to King. Each rank has a number value used by the rules and a symbol shown on screen.
  *
  * @author Farhiya Ayyub
  */

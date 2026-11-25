@@ -1,8 +1,7 @@
 package solitaire.shuffle;
 
 /**
- * The shuffle choices the player can pick: Random, In-Faro, Out-Faro, or None. Each choice holds the shuffle object
- * that does the work.
+ * The shuffle choices the player can pick: Random, In-Faro, Out-Faro, or None.
  *
  * @author Farhiya Ayyub
  */
@@ -28,6 +27,7 @@ public enum ShuffleType {
 
     /** Returns true for IN and OUT, the two perfect (Faro) shuffles, and false for RANDOM and NONE. */
     public boolean isFaro() {
+        // Only IN and OUT are Faro shuffles.
         return this == IN || this == OUT;
     }
 }

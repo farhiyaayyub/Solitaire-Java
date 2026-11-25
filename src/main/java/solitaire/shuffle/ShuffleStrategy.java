@@ -5,8 +5,7 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * The common interface for every way of shuffling: random, In-Faro, Out-Faro, and none. The rest of the program only
- * calls shuffle() and name(), so a new shuffle can be added without changing other code.
+ * The interface for every way of shuffling, so the program can shuffle without knowing which shuffle is used.
  *
  * @author Farhiya Ayyub
  */

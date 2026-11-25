@@ -1,8 +1,7 @@
 package solitaire.enums;
 
 /**
- * The possible states of a game: still running, won, stuck (no new move to try), or stopped because the move or time
- * limit was reached.
+ * The possible states of a game: still running, won, stuck, or stopped at the move or time limit.
  *
  * @author Farhiya Ayyub
  */

@@ -8,8 +8,7 @@ import solitaire.game.GameState;
 import solitaire.model.Card;
 
 /**
- * The board as a player sees it: face-down cards are hidden, and only face-up cards show their rank and suit. The
- * solver uses it so it never looks at hidden cards, and to remember positions it has already seen.
+ * The board as a player sees it, with face-down cards hidden. The solver uses it so it never looks at hidden cards.
  *
  * @author Farhiya Ayyub
  */
@@ -41,6 +40,8 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
      * cards hidden, and how many cards each foundation holds.
      */
     public static ObservableBoard from(GameState state) {
+        // Keep the draw mode and the stock size, hide the face-down waste and column cards,
+        // and keep only how many cards each foundation has.
         return new ObservableBoard(state.drawCount(), state.stock().size(),
                 state.waste().cards().stream().map(ObservableBoard::observe).toList(),
                 state.tableau().stream().map(pile -> pile.cards().stream().map(ObservableBoard::observe).toList())
@@ -53,6 +54,7 @@ public record ObservableBoard(int drawCount, int stockSize, List<VisibleCard> wa
      * down.
      */
     private static VisibleCard observe(Card card) {
+        // Face up: show its rank and suit. Face down: rank 0 and no suit, so the card stays hidden.
         return card.isFaceUp() ? new VisibleCard(card.rank().value(), card.suit()) : new VisibleCard(0, null);
     }
 }

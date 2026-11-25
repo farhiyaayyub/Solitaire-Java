@@ -1,8 +1,7 @@
 package solitaire.enums;
 
 /**
- * The seven kinds of moves in Klondike: between tableau columns, to and from the foundations, from the waste, drawing
- * from the stock, and turning the waste back into the stock.
+ * The seven kinds of moves in Klondike. The other classes use it to pick the right rule or action for each move.
  *
  * @author Farhiya Ayyub
  */
@@ -23,6 +22,7 @@ public enum MoveType {
      * foundation-to-tableau).
      */
     public boolean endsOnTableau() {
+        // Only these three move types put cards on a column.
         return this == TABLEAU_TO_TABLEAU || this == WASTE_TO_TABLEAU || this == FOUNDATION_TO_TABLEAU;
     }
 }

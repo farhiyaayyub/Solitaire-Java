@@ -7,9 +7,8 @@ import java.util.List;
 import solitaire.model.Card;
 
 /**
- * The parent class of every pile on the board: the stock, the waste, the tableau columns, and the foundations. It keeps
- * the list of cards and the shared actions such as adding, removing, and copying cards, while each subclass decides
- * which cards it accepts.
+ * The parent class of every pile on the board. It holds the cards and the shared actions, while each subclass sets its
+ * own rule in accepts().
  *
  * @author Farhiya Ayyub
  */
@@ -22,6 +21,7 @@ public abstract class CardPile extends AbstractList<Card> {
      */
     @Override
     public Card get(int index) {
+        // Give back a copy, so whoever reads it cannot turn the real card over.
         return cards.get(index).copy();
     }
 
@@ -33,11 +33,13 @@ public abstract class CardPile extends AbstractList<Card> {
 
     /** Returns copies of all the cards in the pile, bottom card first. */
     public List<Card> cards() {
+        // Copy every card into a new list that cannot be changed.
         return cards.stream().map(Card::copy).toList();
     }
 
     /** Returns a copy of the top card without removing it. */
     public Card top() {
+        // The top card is the last one in the list.
         return cardAt(size() - 1).copy();
     }
 
@@ -61,9 +63,11 @@ public abstract class CardPile extends AbstractList<Card> {
      * never land on a pile.
      */
     public void place(Card card) {
+        // Ask this pile's own rule first; if it says no, stop with an error.
         if (!accepts(card)) {
             throw new IllegalArgumentException("Pile does not accept this card");
         }
+        // The rule allows it, so put the card on top.
         addToTop(card);
     }
 
@@ -72,19 +76,24 @@ public abstract class CardPile extends AbstractList<Card> {
      * column turns its new top card face up.
      */
     public Card takeTop() {
+        // Remove the last card in the list, which is the top card.
         Card removed = cards.remove(size() - 1);
+        // Let the subclass react to the change.
         onTopRemoved();
         return removed;
     }
 
     /** Removes the top count cards and returns them bottom card first, then calls onTopRemoved(). */
     protected List<Card> removeTopCards(int count) {
+        // A negative count or more cards than the pile has is not possible, so stop with an error.
         if (count < 0 || count > size()) {
             throw new IllegalArgumentException("Invalid number of cards: " + count);
         }
+        // Copy the top count cards into a new list, keeping their order.
         List<Card> removed = new ArrayList<>(cards.subList(size() - count, size()));
         // Clearing the sub-list view removes those cards from the pile itself.
         cards.subList(size() - count, size()).clear();
+        // Let the subclass react to the change.
         onTopRemoved();
         return removed;
     }
@@ -96,6 +105,7 @@ public abstract class CardPile extends AbstractList<Card> {
 
     /** Puts the card on top without checking accepts(). Used for dealing, drawing, and copying. */
     protected void addToTop(Card card) {
+        // Adding to the end of the list puts the card on top.
         cards.add(card);
     }
 
@@ -111,6 +121,7 @@ public abstract class CardPile extends AbstractList<Card> {
      * its copy() method.
      */
     protected <T extends CardPile> T copyCardsInto(T target) {
+        // Copy each card, from bottom to top, so the new pile has the same order.
         for (Card card : cards) {
             target.addToTop(card.copy());
         }

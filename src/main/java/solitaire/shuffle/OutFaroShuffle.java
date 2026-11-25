@@ -1,7 +1,7 @@
 package solitaire.shuffle;
 
 /**
- * Out-Faro shuffle: the interleaving starts with the first half, so the top and bottom cards stay in place.
+ * The Out-Faro shuffle, which starts the interleaving with the first half of the deck.
  *
  * @author Farhiya Ayyub
  */

@@ -1,8 +1,7 @@
 package solitaire.io;
 
 /**
- * Colors for console text using ANSI codes: cyan for section titles, yellow for the next move, and red for red cards
- * and error messages.
+ * The text colors used in the console: cyan, yellow, and red.
  *
  * @author Farhiya Ayyub
  */
@@ -24,6 +23,7 @@ public enum ConsoleColor {
 
     /** Wraps the text in this color's code and the reset code, so only that text is colored. */
     public String paint(String text) {
+        // Start the color, write the text, then reset so the next text is not colored.
         return escapeCode + text + RESET;
     }
 }

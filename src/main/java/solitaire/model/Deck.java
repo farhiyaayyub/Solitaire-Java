@@ -10,8 +10,7 @@ import solitaire.enums.Rank;
 import solitaire.enums.Suit;
 
 /**
- * A deck of exactly 52 different cards, kept in the order they will be drawn. Cards are drawn one at a time from the
- * front.
+ * A deck of exactly 52 different cards, kept in the order they will be drawn.
  *
  * @author Farhiya Ayyub
  */
@@ -26,6 +25,7 @@ public final class Deck {
      * (the King of Spades) is drawn first.
      */
     public Deck() {
+        // For every suit, make one card of every rank.
         for (Suit suit : Suit.values()) {
             for (Rank rank : Rank.values()) {
                 cards.addFirst(new Card(suit, rank));
@@ -38,13 +38,17 @@ public final class Deck {
      * cards and throws an error on a duplicate card or if there are not exactly 52.
      */
     public Deck(List<Card> drawOrder) {
+        // The set remembers the cards already seen, to find duplicates.
         Set<Card> uniqueCards = new HashSet<>();
         for (Card card : drawOrder) {
+            // add() returns false if the card is already in the set, so it is a duplicate.
             if (!uniqueCards.add(card)) {
                 throw new IllegalArgumentException("Duplicate card " + card.code());
             }
+            // Store a copy, so changing the original card later does not change the deck.
             cards.addLast(card.copy());
         }
+        // A deck must have exactly 52 cards.
         if (cards.size() != CARD_COUNT) {
             throw new IllegalArgumentException("Expected " + CARD_COUNT + " cards, found " + cards.size());
         }
@@ -52,11 +56,13 @@ public final class Deck {
 
     /** Returns copies of the cards in draw order, next card first, without removing them from the deck. */
     public List<Card> drawOrder() {
+        // Copy every card into a new list; the deck itself is not changed.
         return cards.stream().map(Card::copy).toList();
     }
 
     /** Checks that the deck holds exactly 52 different cards, and throws an error if not. */
     public void verify() {
+        // The count must be 52, and putting the cards in a set must still give 52 (no duplicates).
         if (cards.size() != CARD_COUNT || new HashSet<>(cards).size() != CARD_COUNT) {
             throw new IllegalStateException("Deck must contain " + CARD_COUNT + " unique cards");
         }
@@ -64,9 +70,11 @@ public final class Deck {
 
     /** Removes the next card from the deck and returns it. Throws an error if the deck is empty. */
     public Card draw() {
+        // An empty deck has no card to give, so stop with an error.
         if (cards.isEmpty()) {
             throw new IllegalStateException("Empty deck");
         }
+        // Take the card at the front of the deck.
         return cards.removeFirst();
     }
 

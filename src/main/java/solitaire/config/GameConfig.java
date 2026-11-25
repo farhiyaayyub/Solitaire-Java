@@ -12,9 +12,8 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * Holds the program settings: the solver's move and time limits, the default and maximum number of simulated games, and
- * the folder for card files. The values come from default.properties inside the program, and the player can override
- * them in solitaire.properties.
+ * The program settings, such as the solver limits, the game counts, and the card-files folder. It reads them from
+ * default.properties and solitaire.properties and checks every value.
  *
  * @author Farhiya Ayyub
  */
@@ -32,6 +31,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
      * count must be at least 1.
      */
     public GameConfig {
+        // The folder must be given, and every number must be at least 1.
         Objects.requireNonNull(cardFilesFolder, "cardFilesFolder");
         requirePositive("solver.maxMoves", maxMoves);
         requirePositive("solver.maxMillis", maxMillis);
@@ -45,30 +45,37 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
      * are not whole numbers.
      */
     public static GameConfig load(Path file) throws IOException {
+        // Step 1: read the default values that come with the program.
         Properties settings = readDefaults();
+        // Step 2: read the player's settings file, if there is one.
         Properties overrides = new Properties();
         if (Files.exists(file)) {
             try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
                 overrides.load(reader);
             }
         }
+        // Step 3: every name in the player's file must also exist in the defaults; otherwise it is a typo.
         for (String name : overrides.stringPropertyNames()) {
             if (settings.getProperty(name) == null) {
                 throw new IllegalArgumentException(file + ": unknown setting '" + name + "'");
             }
         }
+        // Step 4: the player's values replace the default values.
         settings.putAll(overrides);
         // Lets an error name the file the value came from: the player's file or the packaged defaults.
         Set<String> fromFile = overrides.stringPropertyNames();
+        // Step 5: the card-files folder must exist.
         Path cardFilesFolder = Path.of(settings.getProperty("cardFiles.folder").trim());
         if (!Files.isDirectory(cardFilesFolder)) {
             throw new IllegalArgumentException(source(file, fromFile, "cardFiles.folder") + ": cardFiles.folder '"
                     + cardFilesFolder + "' is not an existing folder");
         }
+        // Step 6: read the four numbers.
         int maxMoves = readInt(settings, file, fromFile, "solver.maxMoves");
         long maxMillis = readLong(settings, file, fromFile, "solver.maxMillis");
         int defaultGameCount = readInt(settings, file, fromFile, "simulation.defaultGameCount");
         int maxGameCount = readInt(settings, file, fromFile, "simulation.maxGameCount");
+        // Step 7: build the settings; the record checks that every number is at least 1.
         try {
             return new GameConfig(maxMoves, maxMillis, defaultGameCount, maxGameCount, cardFilesFolder);
         } catch (IllegalArgumentException exception) {
@@ -84,7 +91,9 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
      */
     private static Properties readDefaults() throws IOException {
         Properties defaults = new Properties();
+        // Open the file that is packaged inside the program.
         try (InputStream stream = GameConfig.class.getResourceAsStream(DEFAULTS_RESOURCE)) {
+            // null means the file is not in the program.
             if (stream == null) {
                 throw new IllegalStateException("default.properties is missing from the program");
             }
@@ -97,6 +106,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
 
     /** Reads a setting as a whole number and checks that it fits in an int before returning it. */
     private static int readInt(Properties settings, Path file, Set<String> fromFile, String name) {
+        // Read it as a long first, then check it is not too big or too small for an int.
         long value = readLong(settings, file, fromFile, name);
         if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
             throw new IllegalArgumentException(source(file, fromFile, name) + ": " + name
@@ -111,6 +121,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
      */
     private static long readLong(Properties settings, Path file, Set<String> fromFile, String name) {
         String value = settings.getProperty(name).trim();
+        // Convert the text to a number; if it is not a number, report the setting and the file.
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException exception) {
@@ -124,6 +135,7 @@ public record GameConfig(int maxMoves, long maxMillis, int defaultGameCount, int
      * can say where to fix it.
      */
     private static String source(Path file, Set<String> fromFile, String name) {
+        // If the player's file set this value, name that file; otherwise it came from the defaults.
         return fromFile.contains(name) ? file.toString() : "default.properties";
     }
 
