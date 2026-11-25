@@ -28,7 +28,7 @@ Exit codes: `0` success, `1` file or game error, `2` invalid input or invalid se
 
 ### Interactive menu
 
-1. **Deck:** `[1]` new standard deck, or `[2]` card file (errors are shown in red and you can retry).
+1. **Deck:** `[1]` new standard deck, or `[2]` card file (errors are shown in red, and you can retry).
 2. **Shuffle:** `[1]` Random or `[2]` Perfect Shuffle, then In-Faro or Out-Faro. Card files also offer `[3]` No
    shuffle.
 3. **Draw:** `[1]` Draw 1 or `[3]` Draw 3.
@@ -45,12 +45,12 @@ sample valid and invalid files.
 
 ### Settings
 
-| File | Role |
+`| File | Role |`
 | --- | --- |
 | `src/main/resources/default.properties` | Default value of every setting. Packaged with the program. Also defines which setting names exist. |
 | `solitaire.properties` (project folder) | Your settings. Every line starts commented out (`#`); remove the `#` and edit the value to change it. No rebuild needed. |
 
-| Setting | Default | Meaning |
+`| Setting | Default | Meaning |`
 | --- | ---: | --- |
 | `solver.maxMoves` | 3000 | Most moves the solver plays in one game |
 | `solver.maxMillis` | 10000 | Time limit for one game, in milliseconds |
@@ -94,7 +94,7 @@ wins, so the solver always plays the same deal the same way.
 
 **Scores**
 
-| Move | Score | Why |
+`| Move | Score | Why |`
 | --- | ---: | --- |
 | Safe move to a foundation | 500 | The card can never be needed in the tableau again |
 | Move that uncovers a face-down card | +300 + cards still under it | Seeing new cards is the most useful progress; deeper columns first |
@@ -113,7 +113,7 @@ tableau card can still need it to build on. The check stops at the first foundat
 
 **Loop prevention.** A `HashMap<ObservableBoard, Set<Move>>` maps each visible position to the moves already tried
 there. Because `ObservableBoard` and `Move` are records, Java generates `equals()` and `hashCode()`, so the same
-position and the same move are recognised again. This stops endless back-and-forth moves.
+position and the same move are recogniZed again. This stops endless back-and-forth moves.
 
 **Replay check.** The solver plays on its own copy of the board. `GameController` then replays every chosen move on
 the real game through `SolitaireGame.play()`, which validates each move again.
@@ -143,7 +143,7 @@ up. The remaining 24 cards go to the stock face down. The board is then checked 
 
 ### 5. Validation
 
-| What | Where | How |
+`| What | Where | How |`
 | --- | --- | --- |
 | Settings | `GameConfig.load()` | Known names only, whole numbers, at least 1, existing folder |
 | Command and arguments | `SolitaireApplication` | Known command, argument count, `--compact`/`--verbose` |
@@ -191,7 +191,7 @@ Every class and method has standard Javadoc. Press **Ctrl+Q** on a name in Intel
 
 Each class comment explains the class in four lines:
 
-| Part | Meaning |
+`| Part | Meaning |`
 | --- | --- |
 | `Kind:` | Class, abstract class, interface, record, or enum, and which types it extends, implements, or uses |
 | `Purpose:` | The job the class has in the program |
@@ -200,7 +200,7 @@ Each class comment explains the class in four lines:
 
 Each method comment adds only what the code does not show at a glance:
 
-| Part | Meaning |
+`| Part | Meaning |`
 | --- | --- |
 | First sentence | What the method does, including rules and edge cases |
 | `Algorithm:` | The steps, as a numbered list (methods with a real algorithm) |
@@ -257,7 +257,7 @@ Each method comment adds only what the code does not show at a glance:
 Example run of `compare 100` (Draw 1, 100 random deals, default limits of 3,000 moves and 10 seconds per game). Every
 game was replayed through the engine. The deals are random, so another run gives slightly different numbers.
 
-| Method | Games | Won | Not solved | Limit reached | No new moves | Win rate | Avg moves |
+`| Method | Games | Won | Not solved | Limit reached | No new moves | Win rate | Avg moves |`
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Random | 100 | 47 | 53 | 18 | 35 | 47% | 1079.87 |
 | Random start + In-Faro | 100 | 45 | 55 | 12 | 43 | 45% | 926.12 |
