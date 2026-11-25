@@ -19,7 +19,7 @@ external configuration file, so they can change without rebuilding. No external 
 ./run.ps1 help
 ```
 
-With Maven: `mvn package`, then `java -jar target/klondike-solitaire-1.0.0.jar [command]`.
+With Maven: `mvn package`, then `java -jar target/klondike-solitaire-1.0.0.jar`.
 
 `random`, `simulate`, and `compare` also accept solver limits for one run: `[moves [ms]]`, for example
 `./run.ps1 random --compact 5000 20000`.
