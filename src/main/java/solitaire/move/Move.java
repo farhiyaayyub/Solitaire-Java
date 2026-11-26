@@ -15,7 +15,6 @@ public record Move(MoveType type, int source, int destination, int count) {
      */
     @Override
     public String toString() {
-        // Indexes are stored from 0, so add 1 to show them the way a person counts.
         return type + " source=" + (source + 1) + " destination=" + (destination + 1) + " cards=" + count;
     }
 }

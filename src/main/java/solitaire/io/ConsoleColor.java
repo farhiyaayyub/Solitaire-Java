@@ -23,7 +23,6 @@ public enum ConsoleColor {
 
     /** Wraps the text in this color's code and the reset code, so only that text is colored. */
     public String paint(String text) {
-        // Start the color, write the text, then reset so the next text is not colored.
         return escapeCode + text + RESET;
     }
 }

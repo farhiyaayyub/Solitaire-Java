@@ -15,7 +15,6 @@ public final class Main {
      * success, 1 for a file or game error, or 2 for invalid input.
      */
     public static void main(String[] args) {
-        // Run the whole program, then end Java with the exit code that run() returns.
         System.exit(SolitaireApplication.run(args));
     }
 }

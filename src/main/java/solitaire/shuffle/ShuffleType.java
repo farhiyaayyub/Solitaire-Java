@@ -6,7 +6,6 @@ package solitaire.shuffle;
  * @author Farhiya Ayyub
  */
 public enum ShuffleType {
-    // Each strategy object is created once, when the enum is loaded, and shared by every game.
     RANDOM(new RandomShuffle()),
     IN(new InFaroShuffle()),
     OUT(new OutFaroShuffle()),
@@ -27,7 +26,6 @@ public enum ShuffleType {
 
     /** Returns true for IN and OUT, the two perfect (Faro) shuffles, and false for RANDOM and NONE. */
     public boolean isFaro() {
-        // Only IN and OUT are Faro shuffles.
         return this == IN || this == OUT;
     }
 }

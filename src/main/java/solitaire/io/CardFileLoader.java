@@ -36,30 +36,22 @@ public final class CardFileLoader {
      * the first code is drawn first.
      */
     public Deck load(Path filePath) throws IOException {
-        // Find the real file to open.
         Path resolvedPath = resolveFile(filePath);
         List<Card> cards = new ArrayList<>();
-        // The set remembers the cards already read, to find duplicates.
         Set<Card> uniqueCards = new HashSet<>();
-        // try-with-resources closes the file even if an error is thrown while reading it.
         try (BufferedReader reader = Files.newBufferedReader(resolvedPath, StandardCharsets.UTF_8)) {
             String line;
             int lineNumber = 0;
-            // Read one line at a time until the end of the file (readLine() returns null).
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
-                // Some editors (for example Notepad) save an invisible byte-order mark at the start of the file.
                 if (lineNumber == 1 && line.startsWith("\uFEFF")) {
                     line = line.substring(1);
                 }
-                // Skip empty lines.
                 if (line.isBlank()) {
                     continue;
                 }
-                // A line may hold several codes separated by spaces; turn each one into a card.
                 for (String token : line.trim().split("\\s+")) {
                     Card card = parseCard(token, lineNumber);
-                    // add() returns false if this card was already read, so it is a duplicate.
                     if (!uniqueCards.add(card)) {
                         throw new IllegalArgumentException("Duplicate card " + token + " on line " + lineNumber);
                     }
@@ -67,7 +59,6 @@ public final class CardFileLoader {
                 }
             }
         }
-        // The file must have exactly 52 cards.
         if (cards.size() != Deck.CARD_COUNT) {
             throw new IllegalArgumentException("Expected " + Deck.CARD_COUNT + " cards, found " + cards.size());
         }
@@ -80,16 +71,13 @@ public final class CardFileLoader {
      */
     private Path resolveFile(Path requestedPath) throws IOException {
         Path resolvedPath = requestedPath;
-        // Only a bare file name (like input.txt) that is not found here is looked up in the card-files folder.
         if (!Files.exists(requestedPath) && !requestedPath.isAbsolute()
                 && requestedPath.getNameCount() == 1) {
             resolvedPath = cardFilesFolder.resolve(requestedPath);
         }
-        // A folder is not a card file.
         if (Files.isDirectory(resolvedPath)) {
             throw new IOException("'" + requestedPath + "' is a folder. Enter a card file path.");
         }
-        // The file was not found anywhere.
         if (!Files.exists(resolvedPath)) {
             throw new IOException("File not found: " + requestedPath
                     + ". Enter a valid card file path.");
@@ -102,15 +90,12 @@ public final class CardFileLoader {
      * dash; otherwise the error names the line.
      */
     private Card parseCard(String token, int lineNumber) {
-        // Make the code upper case, so h-a and H-A are the same, then split it at the dash.
         String normalizedToken = token.toUpperCase(Locale.ROOT);
         String[] parts = normalizedToken.split("-", -1);
-        // There must be exactly two parts, and neither may be empty.
         if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
             throw new IllegalArgumentException("Invalid format '" + token + "' on line " + lineNumber
                     + ". Use suit-rank, for example D-2.");
         }
-        // The first part is the suit and the second part is the rank.
         Suit suit = parseSuit(parts[0], lineNumber);
         Rank rank = parseRank(parts[1], lineNumber);
         return new Card(suit, rank);
@@ -118,26 +103,22 @@ public final class CardFileLoader {
 
     /** Returns the suit whose code matches (H, D, C, or S), or throws an error that names the line. */
     private Suit parseSuit(String suitCode, int lineNumber) {
-        // Compare the code with each suit's code and return the one that matches.
         for (Suit suit : Suit.values()) {
             if (suit.code().equals(suitCode)) {
                 return suit;
             }
         }
-        // No suit matched.
         throw new IllegalArgumentException("Unknown suit '" + suitCode + "' on line " + lineNumber
                 + ". Allowed: H, D, C, S.");
     }
 
     /** Returns the rank whose symbol matches (A, 2 to 10, J, Q, or K), or throws an error that names the line. */
     private Rank parseRank(String rankSymbol, int lineNumber) {
-        // Compare the symbol with each rank's symbol and return the one that matches.
         for (Rank rank : Rank.values()) {
             if (rank.symbol().equals(rankSymbol)) {
                 return rank;
             }
         }
-        // No rank matched.
         throw new IllegalArgumentException("Unknown rank '" + rankSymbol + "' on line " + lineNumber
                 + ". Allowed: A, 2-10, J, Q, K.");
     }

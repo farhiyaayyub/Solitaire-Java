@@ -13,7 +13,6 @@ public final class NoShuffle implements ShuffleStrategy {
     /** Returns a copy of the cards in the same order. */
     @Override
     public List<Card> shuffle(List<Card> cards) {
-        // Return a copy with the same order; nothing is mixed.
         return List.copyOf(cards);
     }
 

@@ -15,11 +15,8 @@ public final class RandomShuffle implements ShuffleStrategy {
     /** Copies the cards, mixes them with Collections.shuffle(), and returns them in the new random order. */
     @Override
     public List<Card> shuffle(List<Card> cards) {
-        // Copy the list, so the original order is not changed.
         List<Card> result = new ArrayList<>(cards);
-        // Mix the copy into a random order.
         Collections.shuffle(result);
-        // Return the mixed cards as a list that cannot be changed.
         return List.copyOf(result);
     }
 

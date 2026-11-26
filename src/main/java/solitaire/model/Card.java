@@ -17,7 +17,6 @@ public final class Card {
 
     /** Creates a face-down card of the given suit and rank. */
     public Card(Suit suit, Rank rank) {
-        // A card must have a suit and a rank; null stops with an error. faceUp starts as false (face down).
         this.suit = Objects.requireNonNull(suit);
         this.rank = Objects.requireNonNull(rank);
     }
@@ -39,7 +38,6 @@ public final class Card {
 
     /** Returns true if the card is a Heart or a Diamond. */
     public boolean isRed() {
-        // The color depends only on the suit.
         return suit.isRed();
     }
 
@@ -57,19 +55,16 @@ public final class Card {
      * Returns a unique number from 0 to 51 for this suit and rank, calculated as 13 x suit position + (rank value - 1).
      */
     public int id() {
-        // Example: Hearts is suit 0 and Ace is value 1, so the Ace of Hearts is 0 * 13 + 0 = 0.
         return suit.ordinal() * Rank.values().length + (rank.value() - 1);
     }
 
     /** Returns the card's code as used in card files, such as H-A or S-10. */
     public String code() {
-        // Suit letter, a dash, then the rank symbol.
         return suit.code() + "-" + rank.symbol();
     }
 
     /** Returns a new card with the same suit, rank, and face-up side. */
     public Card copy() {
-        // A new card starts face down, so copy the face-up side as well.
         Card cardCopy = new Card(suit, rank);
         cardCopy.faceUp = faceUp;
         return cardCopy;
@@ -81,7 +76,6 @@ public final class Card {
      */
     @Override
     public String toString() {
-        // A face-down card hides its suit and rank.
         return faceUp ? "[" + code() + "]" : "[XX]";
     }
 
@@ -90,7 +84,6 @@ public final class Card {
      */
     @Override
     public boolean equals(Object other) {
-        // It must be a Card, and both the suit and the rank must match.
         return other instanceof Card card && suit == card.suit && rank == card.rank;
     }
 

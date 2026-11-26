@@ -22,7 +22,6 @@ public enum MoveType {
      * foundation-to-tableau).
      */
     public boolean endsOnTableau() {
-        // Only these three move types put cards on a column.
         return this == TABLEAU_TO_TABLEAU || this == WASTE_TO_TABLEAU || this == FOUNDATION_TO_TABLEAU;
     }
 }
